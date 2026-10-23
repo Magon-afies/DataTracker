@@ -10,11 +10,89 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/plan_title"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/plan_size"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="@string/plan_size"
+                android:inputType="numberDecimal" />
+
+            <Spinner
+                android:id="@+id/plan_unit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:entries="@array/plan_units" />
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/plan_carrier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/plan_carrier_hint"
+            android:inputType="textCapWords" />
+
+        <EditText
+            android:id="@+id/plan_start"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/plan_start"
+            android:inputType="date" />
+
+        <EditText
+            android:id="@+id/plan_expiry"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/plan_expiry"
+            android:inputType="date" />
+
+        <Button
+            android:id="@+id/btn_save_plan"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/save_plan" />
+
         <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/alerts_switch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/alerts_enable" />
+
+        <LinearLayout
+            android:id="@+id/debug_panel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <EditText
+                android:id="@+id/debug_usage_percent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/debug_override_hint"
+                android:inputType="number" />
+
+            <Button
+                android:id="@+id/btn_clear_debug"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/debug_clear" />
+        </LinearLayout>
 
         <TextView
             android:layout_width="match_parent"

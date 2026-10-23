@@ -6,6 +6,7 @@ import android.app.usage.NetworkStatsManager
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
+import android.net.TrafficStats
 import android.os.Process
 import android.provider.Settings
 import java.util.Calendar
@@ -95,6 +96,37 @@ class UsageRepository(private val context: Context) {
         return byUid.values
             .filter { it.total > 0L }
             .sortedByDescending { it.total }
+    }
+
+    /** Cumulative mobile bytes for a plan cycle, or null if NetworkStats is unavailable. */
+    fun mobileUsage(startMillis: Long, endMillis: Long): Long? {
+        if (!hasUsageAccess()) return null
+        var stats: NetworkStats? = null
+        return try {
+            stats = nsm?.querySummary(ConnectivityManager.TYPE_MOBILE, null, startMillis, endMillis)
+                ?: return null
+            val bucket = NetworkStats.Bucket()
+            var total = 0L
+            while (stats.hasNextBucket()) {
+                stats.getNextBucket(bucket)
+                total += bucket.rxBytes + bucket.txBytes
+            }
+            total
+        } catch (_: SecurityException) {
+            null
+        } catch (_: Exception) {
+            null
+        } finally {
+            try { stats?.close() } catch (_: Exception) {}
+        }
+    }
+
+    /** Device-wide mobile counter used only as a reboot-safe fallback. */
+    fun trafficCounter(): Long {
+        val rx = TrafficStats.getMobileRxBytes()
+        val tx = TrafficStats.getMobileTxBytes()
+        return if (rx == TrafficStats.UNSUPPORTED.toLong() || tx == TrafficStats.UNSUPPORTED.toLong()) -1L
+        else rx + tx
     }
 
     fun startOfDay(now: Long): Long =

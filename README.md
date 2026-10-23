@@ -39,3 +39,25 @@ Switching to your own key later means uninstalling once (signatures differ).
 - Which servers an app contacts (needs a VpnService build, like NetGuard)
 - Meme detection (no reliable offline signal)
 - Multi-page PDF OCR (page 1 only)
+
+## Data-plan threshold notifications
+
+Open **Alerts** in the app to save a plan size, carrier, start date, and expiry
+date. The app keeps plan-cycle snapshots locally, checks them every 30 minutes,
+and warns at 80%, 90%, and 100%. Each threshold fires once per plan. Long-press
+the alerts switch to reveal the hidden debug override, enter a percentage, tap
+Save, and open Dashboard to test notifications without consuming data.
+
+The notification action opens `https://crestpoint.name.ng`. To enable the
+optional Supabase event sink later, create the table with:
+
+```sql
+create table if not exists public.app_events (
+  id uuid primary key default gen_random_uuid(),
+  event_type text not null,
+  created_at timestamptz not null default now()
+);
+```
+
+The current build intentionally does not include Supabase credentials or
+analytics network calls.

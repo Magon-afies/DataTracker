@@ -24,6 +24,14 @@ class Prefs(context: Context) {
         get() = sp.getString("last_backfill", "") ?: ""
         set(v) = sp.edit().putString("last_backfill", v).apply()
 
+    var debugUsagePercent: Int
+        get() = sp.getInt("debug_usage_percent", 0)
+        set(v) = sp.edit().putInt("debug_usage_percent", v.coerceIn(0, 100)).apply()
+
+    var notificationsRequested: Boolean
+        get() = sp.getBoolean("notifications_requested", false)
+        set(v) = sp.edit().putBoolean("notifications_requested", v).apply()
+
     fun wasNotified(key: String) = sp.getBoolean("n_$key", false)
 
     fun markNotified(key: String) = sp.edit().putBoolean("n_$key", true).apply()

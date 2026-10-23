@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper
 
 /** One small local database: usage history + photo/PDF scan cache. */
 class Db private constructor(context: Context) :
-    SQLiteOpenHelper(context.applicationContext, "tracker.db", null, 1) {
+    SQLiteOpenHelper(context.applicationContext, "tracker.db", null, 2) {
 
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL(
@@ -24,9 +24,27 @@ class Db private constructor(context: Context) :
         db.execSQL(
             "CREATE TABLE doc_cache (uri TEXT PRIMARY KEY, name TEXT NOT NULL, ocr TEXT NOT NULL)"
         )
+        createPlanTables(db)
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {}
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        if (oldVersion < 2) createPlanTables(db)
+    }
+
+    private fun createPlanTables(db: SQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS data_plans (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, size_bytes INTEGER NOT NULL, " +
+                "carrier TEXT NOT NULL, start_ms INTEGER NOT NULL, expiry_ms INTEGER NOT NULL, " +
+                "fired_mask INTEGER NOT NULL DEFAULT 0)"
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS plan_snapshots (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, plan_id INTEGER NOT NULL, " +
+                "captured_ms INTEGER NOT NULL, usage_bytes INTEGER NOT NULL, " +
+                "traffic_counter INTEGER NOT NULL DEFAULT -1)"
+        )
+    }
 
     companion object {
         @Volatile

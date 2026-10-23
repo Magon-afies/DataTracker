@@ -32,6 +32,7 @@ class SnapshotWorker(context: Context, params: WorkerParameters) :
         if (yesterday.isNotEmpty()) history.saveDay(Dates.day(yesterdayStart), yesterday)
 
         Alerts.check(applicationContext, today)
+        PlanMonitor.capture(applicationContext)
         return Result.success()
     }
 

@@ -1,9 +1,12 @@
 package com.mycompany.datatracker.ui
 
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import android.widget.ProgressBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -14,6 +17,8 @@ import com.mycompany.datatracker.data.Prefs
 import com.mycompany.datatracker.usage.UsageRepository
 import com.mycompany.datatracker.util.Dates
 import com.mycompany.datatracker.util.FormatBytes
+import com.mycompany.datatracker.work.Alerts
+import com.mycompany.datatracker.work.PlanMonitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -30,6 +35,11 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
         view.findViewById<Button>(R.id.btn_grant).setOnClickListener {
             repo.openUsageAccessSettings()
         }
+        view.findViewById<Button>(R.id.btn_notification_settings).setOnClickListener {
+            startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().packageName)
+            })
+        }
     }
 
     override fun onResume() {
@@ -44,6 +54,11 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             if (granted) View.GONE else View.VISIBLE
         view.findViewById<Button>(R.id.btn_grant).visibility =
             if (granted) View.GONE else View.VISIBLE
+        val notificationsOff = !Alerts.canNotify(requireContext())
+        view.findViewById<View>(R.id.notification_banner).visibility =
+            if (notificationsOff) View.VISIBLE else View.GONE
+        view.findViewById<Button>(R.id.btn_notification_settings).visibility =
+            if (notificationsOff) View.VISIBLE else View.GONE
 
         if (!granted) return
 
@@ -51,6 +66,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
 
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
             val now = System.currentTimeMillis()
+            val planUsage = PlanMonitor.capture(appContext)
             val today = repo.query(repo.startOfDay(now), now)
             val week = repo.query(now - 7L * 24 * 60 * 60 * 1000, now)
             val month = repo.query(repo.startOfMonth(now), now)
@@ -82,6 +98,19 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
                 view.findViewById<TextView>(R.id.total_today).text = "Today — $todayText"
                 view.findViewById<TextView>(R.id.total_week).text = "Last 7 days — $weekText"
                 view.findViewById<TextView>(R.id.total_month).text = "This month — $monthText"
+                val planText = view.findViewById<TextView>(R.id.plan_usage)
+                val planCarrier = view.findViewById<TextView>(R.id.plan_carrier)
+                val progress = view.findViewById<ProgressBar>(R.id.plan_progress)
+                if (planUsage == null) {
+                    planText.setText(R.string.plan_usage)
+                    planCarrier.setText(R.string.plan_carrier)
+                    progress.progress = 0
+                } else {
+                    planText.text = "${planUsage.percent}% used · ${FormatBytes.human(planUsage.usedBytes)} / " +
+                        FormatBytes.human(planUsage.plan.sizeBytes)
+                    planCarrier.text = "${planUsage.plan.carrier} · expires ${Dates.day(planUsage.plan.expiryMs)}"
+                    progress.progress = planUsage.percent
+                }
                 view.findViewById<BarChartView>(R.id.history_chart).setData(labels, mobile, wifi)
                 val adapter = view.findViewById<RecyclerView>(R.id.top_apps).adapter
                 (adapter as? AppUsageAdapter)?.submit(today.take(5))

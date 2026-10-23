@@ -41,6 +41,10 @@
             </intent-filter>
         </activity>
 
+        <receiver
+            android:name=".work.TopUpReceiver"
+            android:exported="false" />
+
     </application>
 
 </manifest>

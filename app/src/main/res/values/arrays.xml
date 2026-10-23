@@ -1,0 +1,6 @@
+<resources>
+    <string-array name="plan_units">
+        <item>@string/plan_unit_mb</item>
+        <item>@string/plan_unit_gb</item>
+    </string-array>
+</resources>
