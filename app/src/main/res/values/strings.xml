@@ -1,0 +1,48 @@
+<resources>
+    <string name="app_name">Data Tracker</string>
+    <string name="brand_product">A product of CrestPoint</string>
+    <string name="brand_credit">Built with love by Magnificent Afiesimama</string>
+    <string name="intro_tagline">See your data clearly.</string>
+    <string name="intro_subtitle">A calmer way to understand your apps, media and everyday usage.</string>
+    <string name="intro_content_description">Data Tracker logo</string>
+    <string name="tab_dashboard">Dashboard</string>
+    <string name="tab_apps">Apps</string>
+    <string name="tab_media">Media</string>
+    <string name="usage_access_required">⚠️ Usage access required — tap the button below, find “Data Tracker” in the list, and allow it. Then come back to this screen.</string>
+    <string name="grant_usage_access">Grant usage access</string>
+    <string name="data_usage_header">Data usage</string>
+    <string name="top_apps_header">Top apps today</string>
+    <string name="media_intro">Scan your photos: identical and similar images are grouped together, and text inside them is read on your device (OCR). Nothing is uploaded anywhere.</string>
+    <string name="scan_images">Scan photos</string>
+    <string name="scanning">Preparing scan…</string>
+    <string name="scan_progress">Analyzing %1$d / %2$d photos</string>
+    <string name="scan_done">Done — %1$d groups found</string>
+    <string name="group_meta">%1$d images</string>
+    <string name="group_no_text">No readable text</string>
+    <string name="tab_today">Today</string>
+    <string name="tab_7days">7 days</string>
+    <string name="tab_30days">30 days</string>
+    <string name="tab_settings">Alerts</string>
+    <string name="chart_header">Last 14 days (purple = mobile, blue = Wi-Fi)</string>
+    <string name="restrict_data">Restrict data</string>
+    <string name="app_info">App info</string>
+    <string name="scan_pdfs">Scan PDFs…</string>
+    <string name="nothing_indexed">Nothing indexed yet — tap Scan photos.</string>
+    <string name="scan_summary">%1$d items indexed · %2$d groups</string>
+    <string name="pdf_scanning">Reading %1$d PDF(s)…</string>
+    <string name="photo_access_denied">Photo access was denied. Allow it to scan your photos.</string>
+    <string name="partial_note">You allowed only some photos. Tap here to choose more or allow all.</string>
+    <string name="cannot_open">No app found to open this file.</string>
+    <string name="delete_extras">Delete %1$d extra copies</string>
+    <string name="delete_title">Move %1$d copies to trash?</string>
+    <string name="delete_message">Keeps the largest copy (%1$s). The others go to your gallery trash, where you can restore them for about 30 days.</string>
+    <string name="delete_confirm">Move to trash</string>
+    <string name="delete_needs_android11">Deleting needs Android 11 or newer.</string>
+    <string name="alerts_enable">Alert me about heavy data use</string>
+    <string name="alerts_app_cap">Daily cap per app (MB, 0 = off)</string>
+    <string name="alerts_bg_cap">Background data per app per day (MB, 0 = off)</string>
+    <string name="alerts_save">Save</string>
+    <string name="alerts_allow_notifications">Allow notifications</string>
+    <string name="settings_saved">Saved</string>
+    <string name="alerts_note">Checked about every 30 minutes in the background. Each alert fires once per app per day.</string>
+</resources>
