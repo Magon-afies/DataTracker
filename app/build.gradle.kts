@@ -7,12 +7,18 @@ android {
     namespace = "com.mycompany.datatracker"
     compileSdk = 35
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.mycompany.datatracker"
         minSdk = 29          // Android 10+
         targetSdk = 35
         versionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
         versionName = "2.0"
+        buildConfigField("String", "SUPABASE_URL", "\"${System.getenv("SUPABASE_URL") ?: ""}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${System.getenv("SUPABASE_ANON_KEY") ?: ""}\"")
     }
 
     // Release signing comes from env vars (set by GitHub Actions secrets).

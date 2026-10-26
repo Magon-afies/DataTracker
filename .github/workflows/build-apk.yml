@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERSION_CODE: ${{ github.run_number }}
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
 
     steps:
       - name: Checkout

@@ -9,17 +9,27 @@ import android.widget.EditText
 import android.widget.Toast
 import android.widget.Spinner
 import android.widget.LinearLayout
+import android.widget.TextView
+import android.content.Intent
+import android.provider.Settings
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.mycompany.datatracker.R
 import com.mycompany.datatracker.data.Prefs
 import com.mycompany.datatracker.data.PlanStore
+import com.mycompany.datatracker.data.SupabaseEventSink
+import com.mycompany.datatracker.util.FormatBytes
+import com.mycompany.datatracker.util.PhoneStorage
 import com.mycompany.datatracker.work.Alerts
 import com.mycompany.datatracker.work.SnapshotWorker
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SettingsFragment : Fragment(R.layout.fragment_settings) {
 
@@ -67,6 +77,22 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
             Toast.makeText(requireContext(), R.string.settings_saved, Toast.LENGTH_SHORT).show()
         }
 
+        refreshStorage(view)
+        view.findViewById<Button>(R.id.btn_clear_cache).setOnClickListener {
+            PhoneStorage.clearAppCache(requireContext())
+            Toast.makeText(requireContext(), R.string.storage_cleared, Toast.LENGTH_SHORT).show()
+            refreshStorage(view)
+            viewLifecycleOwner.lifecycleScope.launch { SupabaseEventSink.record("cache_cleared") }
+        }
+        view.findViewById<Button>(R.id.btn_storage_settings).setOnClickListener {
+            val intent = Intent(Settings.ACTION_MANAGE_STORAGE)
+            if (intent.resolveActivity(requireContext().packageManager) != null) {
+                startActivity(intent)
+            } else {
+                Toast.makeText(requireContext(), R.string.storage_settings_unavailable, Toast.LENGTH_SHORT).show()
+            }
+        }
+
         view.findViewById<SwitchCompat>(R.id.alerts_switch).setOnLongClickListener {
             view.findViewById<LinearLayout>(R.id.debug_panel).visibility = View.VISIBLE
             true
@@ -87,6 +113,23 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
     private fun updateNotifButton() {
         view?.findViewById<Button>(R.id.btn_notif)?.visibility =
             if (Alerts.canNotify(requireContext())) View.GONE else View.VISIBLE
+    }
+
+    private fun refreshStorage(view: View) {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
+            val snapshot = PhoneStorage.snapshot(requireContext())
+            withContext(Dispatchers.Main) {
+                view.findViewById<TextView>(R.id.storage_summary).text = getString(
+                    R.string.storage_summary,
+                    FormatBytes.human(snapshot.usedBytes),
+                    FormatBytes.human(snapshot.totalBytes),
+                    FormatBytes.human(snapshot.freeBytes)
+                )
+                view.findViewById<TextView>(R.id.storage_cache).text = getString(
+                    R.string.storage_cache, FormatBytes.human(snapshot.cacheBytes)
+                )
+            }
+        }
     }
 
     private fun parseDate(value: String, endOfDay: Boolean): Long? = try {
