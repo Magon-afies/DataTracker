@@ -59,22 +59,4 @@ create table if not exists public.app_events (
 );
 ```
 
-The release build can receive the public Supabase URL and publishable key through
-GitHub repository variables named `SUPABASE_URL` and `SUPABASE_ANON_KEY`. The
-key is safe to embed in an Android client only when the database table has RLS
-enabled; never put a Supabase secret/service-role key in the APK. The optional
-event sink writes cache-clean events to `public.app_events` and fails silently
-if that table is not present.
-
-For the event sink, create the table in the Supabase SQL Editor:
-
-```sql
-create table if not exists public.app_events (
-  id uuid primary key default gen_random_uuid(),
-  event_type text not null check (length(event_type) between 1 and 80),
-  created_at timestamptz not null default now()
-);
-alter table public.app_events enable row level security;
-create policy "anonymous event insert" on public.app_events
-  for insert to anon with check (event_type in ('cache_cleared'));
-```
+The current build does not include Supabase credentials or analytics network calls.

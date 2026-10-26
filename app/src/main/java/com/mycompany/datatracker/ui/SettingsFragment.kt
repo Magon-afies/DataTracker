@@ -22,7 +22,6 @@ import androidx.lifecycle.lifecycleScope
 import com.mycompany.datatracker.R
 import com.mycompany.datatracker.data.Prefs
 import com.mycompany.datatracker.data.PlanStore
-import com.mycompany.datatracker.data.SupabaseEventSink
 import com.mycompany.datatracker.util.FormatBytes
 import com.mycompany.datatracker.util.PhoneStorage
 import com.mycompany.datatracker.work.Alerts
@@ -82,7 +81,6 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
             PhoneStorage.clearAppCache(requireContext())
             Toast.makeText(requireContext(), R.string.storage_cleared, Toast.LENGTH_SHORT).show()
             refreshStorage(view)
-            viewLifecycleOwner.lifecycleScope.launch { SupabaseEventSink.record("cache_cleared") }
         }
         view.findViewById<Button>(R.id.btn_storage_settings).setOnClickListener {
             val intent = Intent(Settings.ACTION_MANAGE_STORAGE)
