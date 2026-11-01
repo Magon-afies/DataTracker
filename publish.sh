@@ -33,7 +33,7 @@ echo "==> Building (run $RUN_ID). First build takes ~5-8 min."
 if ! gh run watch "$RUN_ID" --exit-status; then
   echo
   echo "Build failed. Last log lines:"
-  gh run view "$RUN_ID" --log-failed | tail -60
+  gh run view "$RUN_ID" --log-failed | grep -E "e: |error:|FAILED"
   exit 1
 fi
 
