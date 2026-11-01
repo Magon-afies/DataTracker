@@ -51,17 +51,34 @@
             <Button
                 android:id="@+id/health_open_settings"
                 style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/health_open_settings" />
+                android:layout_weight="1"
+                android:paddingHorizontal="4dp"
+                android:text="@string/health_open_settings"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/health_clear_cache"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:paddingHorizontal="4dp"
+                android:text="@string/health_clear_cache"
+                android:textSize="12sp" />
 
             <Button
                 android:id="@+id/health_kill"
                 style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="@string/health_kill" />
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:paddingHorizontal="4dp"
+                android:text="@string/health_kill"
+                android:textSize="12sp" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

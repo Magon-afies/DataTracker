@@ -74,4 +74,6 @@
     <string name="health_hint">Cache · storage · foreground time · background data — sorted by battery impact.</string>
     <string name="health_open_settings">Settings</string>
     <string name="health_kill">Kill bg</string>
+    <string name="health_clear_cache">Clear cache</string>
+    <string name="accessibility_desc">Helps clear app caches by automating the Settings menu.</string>
 </resources>

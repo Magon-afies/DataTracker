@@ -15,7 +15,8 @@ import java.util.Locale
 
 class HealthAdapter(
     private val onOpenSettings: (String) -> Unit,
-    private val onKill: (String) -> Unit
+    private val onKill: (String) -> Unit,
+    private val onClearCache: (String) -> Unit
 ) : RecyclerView.Adapter<HealthAdapter.VH>() {
 
     private val items = ArrayList<AppHealth>()
@@ -48,6 +49,7 @@ class HealthAdapter(
             "Last used " + fmt.format(Date(a.lastUsedMs)) else "Not used today"
         h.btnSettings.setOnClickListener { onOpenSettings(a.packageName) }
         h.btnKill.setOnClickListener { onKill(a.packageName) }
+        h.btnClearCache.setOnClickListener { onClearCache(a.packageName) }
     }
 
     class VH(v: View) : RecyclerView.ViewHolder(v) {
@@ -57,5 +59,6 @@ class HealthAdapter(
         val last: TextView = v.findViewById(R.id.health_last)
         val btnSettings: Button = v.findViewById(R.id.health_open_settings)
         val btnKill: Button = v.findViewById(R.id.health_kill)
+        val btnClearCache: Button = v.findViewById(R.id.health_clear_cache)
     }
 }
