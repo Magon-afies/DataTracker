@@ -20,6 +20,7 @@ import com.mycompany.datatracker.ui.SettingsFragment
 import com.mycompany.datatracker.work.Alerts
 import com.mycompany.datatracker.work.SnapshotWorker
 import com.mycompany.datatracker.data.Prefs
+import com.mycompany.datatracker.autopsy.AutopsyService
 
 class MainActivity : AppCompatActivity() {
 
@@ -32,6 +33,7 @@ class MainActivity : AppCompatActivity() {
 
         Alerts.ensureChannel(this)
         SnapshotWorker.schedule(this)
+        AutopsyService.start(this)
 
         if (savedInstanceState == null) swap(DashboardFragment())
         playIntro()

@@ -1,0 +1,80 @@
+package com.mycompany.datatracker.autopsy
+
+import android.annotation.SuppressLint
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.mycompany.datatracker.MainActivity
+import com.mycompany.datatracker.R
+import com.mycompany.datatracker.work.Alerts
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+object AutopsyNotifier {
+    private const val CHANNEL_ALERT = "autopsy_alerts"
+    private const val CHANNEL_SERVICE = "autopsy_service"
+    const val SERVICE_ID = 7001
+
+    fun ensureChannels(context: Context) {
+        if (Build.VERSION.SDK_INT < 26) return
+        val nm = context.getSystemService(NotificationManager::class.java) ?: return
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_ALERT, "Data Autopsy", NotificationManager.IMPORTANCE_HIGH)
+        )
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_SERVICE, "Data Autopsy monitor", NotificationManager.IMPORTANCE_MIN)
+        )
+    }
+
+    fun serviceNotification(context: Context): Notification =
+        NotificationCompat.Builder(context, CHANNEL_SERVICE)
+            .setSmallIcon(R.drawable.ic_stat_datatracker)
+            .setContentTitle("Data Autopsy is watching")
+            .setContentText("Monitoring per-app data usage")
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setContentIntent(openApp(context))
+            .build()
+
+    @SuppressLint("MissingPermission")
+    fun post(context: Context, spike: Spike) {
+        if (!Alerts.canNotify(context)) return
+        ensureChannels(context)
+        val fmt = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val window = "${fmt.format(Date(spike.from))}–${fmt.format(Date(spike.to))}"
+        val short = "$window · ${spike.screen}"
+        val big = buildString {
+            append(window).append(" · ").append(spike.screen).append('\n')
+            append("Mobile ").append(mb(spike.mobileBytes))
+            append(" · Wi-Fi ").append(mb(spike.wifiBytes)).append('\n')
+            append("Background ").append(mb(spike.bgBytes))
+            append(" of ").append(mb(spike.totalBytes)).append(" total")
+        }
+        val n = NotificationCompat.Builder(context, CHANNEL_ALERT)
+            .setSmallIcon(R.drawable.ic_stat_datatracker)
+            .setContentTitle("${spike.label} used ${mb(spike.bytes)}")
+            .setContentText(short)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(big))
+            .setContentIntent(openApp(context))
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+        NotificationManagerCompat.from(context).notify(70000 + (spike.uid and 0xFFFF), n)
+    }
+
+    private fun openApp(context: Context): PendingIntent =
+        PendingIntent.getActivity(
+            context, 0, Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+    private fun mb(bytes: Long): String =
+        String.format(Locale.US, "%.1f MB", bytes / 1048576.0)
+}

@@ -25,6 +25,9 @@
     <!-- Android 13+: data-cap alerts -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <application
         android:label="@string/app_name"
         android:icon="@drawable/ic_datatracker_logo"
@@ -44,6 +47,24 @@
         <receiver
             android:name=".work.TopUpReceiver"
             android:exported="false" />
+
+        <service
+            android:name=".autopsy.AutopsyService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="per_app_network_usage_monitoring" />
+        </service>
+
+        <receiver
+            android:name=".autopsy.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 
