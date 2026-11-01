@@ -31,6 +31,7 @@ class HealthFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val app = requireContext().applicationContext
+        val empty = view.findViewById<TextView>(R.id.health_empty)
         val rv = view.findViewById<RecyclerView>(R.id.health_list)
         rv.layoutManager = LinearLayoutManager(requireContext())
         val ad = HealthAdapter(
@@ -48,7 +49,10 @@ class HealthFragment : Fragment() {
                         .sortedByDescending { it.cacheBytes }
                 }.getOrNull() ?: emptyList()
             }
-            if (isAdded) ad.submit(items)
+            if (isAdded) {
+                ad.submit(items)
+                empty.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+            }
         }
     }
 

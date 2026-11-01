@@ -20,6 +20,16 @@
         android:textColor="@color/on_surface_muted"
         android:paddingBottom="10dp" />
 
+    <TextView
+        android:id="@+id/health_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="No apps found or usage access is missing."
+        android:textAlignment="center"
+        android:textColor="@color/on_surface"
+        android:visibility="gone" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/health_list"
         android:layout_width="match_parent"
