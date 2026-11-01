@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.mycompany.datatracker.ui.AppsFragment
 import com.mycompany.datatracker.ui.DashboardFragment
+import com.mycompany.datatracker.ui.HealthFragment
 import com.mycompany.datatracker.ui.MediaFragment
 import com.mycompany.datatracker.ui.SettingsFragment
 import com.mycompany.datatracker.work.Alerts
@@ -45,6 +46,7 @@ class MainActivity : AppCompatActivity() {
                     R.id.nav_apps -> swap(AppsFragment())
                     R.id.nav_media -> swap(MediaFragment())
                     R.id.nav_settings -> swap(SettingsFragment())
+                    R.id.nav_health -> swap(HealthFragment())
                 }
                 true
             }

@@ -69,4 +69,9 @@
     <string name="storage_open_settings">Review system storage</string>
     <string name="storage_cleared">App cache cleared</string>
     <string name="storage_settings_unavailable">Storage settings are not available on this device.</string>
+    <string name="nav_health">Health</string>
+    <string name="health_title">App health</string>
+    <string name="health_hint">Cache · storage · foreground time · background data — sorted by battery impact.</string>
+    <string name="health_open_settings">Settings</string>
+    <string name="health_kill">Kill bg</string>
 </resources>
