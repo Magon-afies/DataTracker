@@ -83,7 +83,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
             refreshStorage(view)
         }
         view.findViewById<Button>(R.id.btn_storage_settings).setOnClickListener {
-            val intent = Intent(Settings.ACTION_MANAGE_STORAGE)
+            val intent = Intent(Settings.ACTION_INTERNAL_STORAGE_SETTINGS)
             if (intent.resolveActivity(requireContext().packageManager) != null) {
                 startActivity(intent)
             } else {
