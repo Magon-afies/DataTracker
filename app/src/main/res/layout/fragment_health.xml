@@ -10,8 +10,7 @@
         android:layout_height="wrap_content"
         android:text="@string/health_title"
         android:textAppearance="?attr/textAppearanceTitleMedium"
-        android:textColor="@color/on_surface"
-        android:paddingBottom="6dp" />
+        android:textColor="@color/on_surface" />
 
     <TextView
         android:layout_width="match_parent"
@@ -19,6 +18,35 @@
         android:text="@string/health_hint"
         android:textColor="@color/on_surface_muted"
         android:paddingBottom="10dp" />
+
+    <EditText
+        android:id="@+id/health_search"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Search apps..."
+        android:background="@color/surface_elevated"
+        android:padding="12dp"
+        android:layout_marginBottom="8dp"
+        android:textColor="@color/on_surface"
+        android:textColorHint="@color/on_surface_muted"
+        android:singleLine="true" />
+
+    <Button
+        android:id="@+id/btn_clean_all"
+        style="@style/Widget.Material3.Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:text="🤖 Auto-Clean Top 10 Caches"
+        android:textColor="@color/on_surface" />
+
+    <ProgressBar
+        android:id="@+id/health_loading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="30dp"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/health_empty"
