@@ -168,3 +168,8 @@
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>
+
+    <string name="plan_price">Plan price (₦)</string>
+    <string name="health_title">App health</string>
+    <string name="health_hint">Cache · storage · foreground time · background data — sorted by battery impact.</string>
+</resources>
