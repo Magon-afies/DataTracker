@@ -9,7 +9,6 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.card.MaterialCardView
 import com.mycompany.datatracker.R
-import com.mycompany.datatracker.data.PlanStore
 import com.mycompany.datatracker.util.FormatBytes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -124,13 +123,9 @@ class DeathClockView(context: Context, attrs: AttributeSet? = null) :
                 val left = (s.deathMs - now).coerceAtLeast(0L)
                 countdown.text = format(left)
                 countdown.setTextColor(if (left < 6L * 3_600_000L) urgentColor else normalColor)
-                val plan = PlanStore(context).active(now)
-                val nairaPerByte = if (plan != null && plan.sizeBytes > 0) plan.priceNaira / plan.sizeBytes else 0.0
-                val nairaPerHour = s.bytesPerHour * nairaPerByte
-                val nairaStr = if (nairaPerHour > 0) " (≈ ₦${String.format(Locale.US, "%.0f", nairaPerHour)}/h)" else ""
                 val line = "Zero at ${dateFormat.format(Date(s.deathMs))} · " +
                     "${FormatBytes.human(s.remainingBytes)} left · " +
-                    "burning ${FormatBytes.human(s.bytesPerHour.toLong())}/h$nairaStr"
+                    "burning ${FormatBytes.human(s.bytesPerHour.toLong())}/h"
                 detail.text = if (s.outlastsPlan) {
                     line + "\nPlan expires ${dateFormat.format(Date(s.expiryMs))} first — at this pace it will last."
                 } else line

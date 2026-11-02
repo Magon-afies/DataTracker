@@ -12,7 +12,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.mycompany.datatracker.MainActivity
 import com.mycompany.datatracker.R
-import com.mycompany.datatracker.data.PlanStore
 import com.mycompany.datatracker.work.Alerts
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -50,14 +49,6 @@ object AutopsyNotifier {
         ensureChannels(context)
         val fmt = SimpleDateFormat("HH:mm", Locale.getDefault())
         val window = "${fmt.format(Date(spike.from))}–${fmt.format(Date(spike.to))}"
-        val plan = PlanStore(context).active(System.currentTimeMillis())
-        val nairaPerByte = if (plan != null && plan.sizeBytes > 0) plan.priceNaira / plan.sizeBytes else 0.0
-        val naira = spike.bytes * nairaPerByte
-        val nairaTag = if (naira > 0.0) " (≈ ₦${String.format(Locale.US, "%.0f", naira)})" else ""
-        val plan = PlanStore(context).active(System.currentTimeMillis())
-        val nairaPerByte = if (plan != null && plan.sizeBytes > 0) plan.priceNaira / plan.sizeBytes else 0.0
-        val naira = spike.bytes * nairaPerByte
-        val nairaTag = if (naira > 0.0) " (≈ ₦${String.format(Locale.US, "%.0f", naira)})" else ""
         val short = "$window · ${spike.screen}"
         val big = buildString {
             append(window).append(" · ").append(spike.screen).append('\n')
@@ -68,7 +59,7 @@ object AutopsyNotifier {
         }
         val n = NotificationCompat.Builder(context, CHANNEL_ALERT)
             .setSmallIcon(R.drawable.ic_stat_datatracker)
-            .setContentTitle("${spike.label} used ${mb(spike.bytes)}$nairaTag")
+            .setContentTitle("${spike.label} used ${mb(spike.bytes)}")
             .setContentText(short)
             .setStyle(NotificationCompat.BigTextStyle().bigText(big))
             .setContentIntent(openApp(context))

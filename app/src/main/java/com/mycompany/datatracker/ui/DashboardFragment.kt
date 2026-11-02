@@ -7,20 +7,17 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.ProgressBar
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mycompany.datatracker.R
-import com.mycompany.datatracker.autopsy.AutopsyService
 import com.mycompany.datatracker.data.HistoryStore
 import com.mycompany.datatracker.data.Prefs
 import com.mycompany.datatracker.usage.UsageRepository
 import com.mycompany.datatracker.util.Dates
 import com.mycompany.datatracker.util.FormatBytes
 import com.mycompany.datatracker.work.Alerts
-import com.mycompany.datatracker.work.SnapshotWorker
 import com.mycompany.datatracker.work.PlanMonitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,12 +39,6 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                 putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().packageName)
             })
-        }
-
-        view.findViewById<Button>(R.id.btn_run_autopsy).setOnClickListener {
-            AutopsyService.start(requireContext())
-            SnapshotWorker.schedule(requireContext())
-            Toast.makeText(requireContext(), R.string.autopsy_running, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -117,19 +108,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
                 } else {
                     planText.text = "${planUsage.percent}% used · ${FormatBytes.human(planUsage.usedBytes)} / " +
                         FormatBytes.human(planUsage.plan.sizeBytes)
-                    
-                    val plan = planUsage.plan
-                    val nairaPerGB = if (plan.sizeBytes > 0) plan.priceNaira / (plan.sizeBytes / 1073741824.0) else 0.0
-                    val burnedNaira = plan.priceNaira * (planUsage.usedBytes.toDouble() / plan.sizeBytes)
-                    val nairaLine = String.format(java.util.Locale.US, "≈ ₦%.0f burned so far · ₦%.0f/GB", burnedNaira, nairaPerGB)
-                    
-                    val plan = planUsage.plan
-                    val nairaPerGB = if (plan.sizeBytes > 0) plan.priceNaira / (plan.sizeBytes / 1073741824.0) else 0.0
-                    val burnedNaira = plan.priceNaira * (planUsage.usedBytes.toDouble() / plan.sizeBytes)
-                    val nairaLine = String.format(java.util.Locale.US, "≈ ₦%.0f burned so far · ₦%.0f/GB", burnedNaira, nairaPerGB)
-                    planCarrier.text = "${plan.carrier} · expires ${Dates.day(plan.expiryMs)}
-$nairaLine"
-
+                    planCarrier.text = "${planUsage.plan.carrier} · expires ${Dates.day(planUsage.plan.expiryMs)}"
                     progress.progress = planUsage.percent
                 }
                 view.findViewById<BarChartView>(R.id.history_chart).setData(labels, mobile, wifi)
