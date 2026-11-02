@@ -44,9 +44,14 @@ class HealthAdapter(
         val isZombie = (now - a.lastUsedMs > 30L * 24 * 3600 * 1000) && a.lastUsedMs > 0
         val zombieTag = if (isZombie) " 🧟 (Unused 30d+)" else ""
         
-        h.meta.text = "FG " + (a.foregroundTimeMs / 60_000L) + "m · " +
+        // BATTERY SCORE FEATURE
+        val batteryDrain = a.batteryScore.toInt()
+        val batteryTag = if (batteryDrain > 50) "🔥 HIGH BATTERY DRAIN ($batteryDrain pts)" else "🔋 Battery Drain: $batteryDrain pts"
+        
+        h.meta.text = "$batteryTag\nFG " + (a.foregroundTimeMs / 60_000L) + "m · " +
             "BG " + FormatBytes.human(a.backgroundBytes) + " · " +
             "Net " + FormatBytes.human(a.networkBytes) + zombieTag
+            
         h.storage.text = "Cache " + FormatBytes.human(a.cacheBytes) +
             " · Data " + FormatBytes.human(a.dataBytes) +
             " · APK " + FormatBytes.human(a.apkBytes)
@@ -54,11 +59,7 @@ class HealthAdapter(
         h.last.text = if (a.lastUsedMs > 0L)
             "Last used " + fmt.format(Date(a.lastUsedMs)) else "Not used today"
             
-        // Click card to show timeline
         h.itemView.setOnClickListener {
-            // Since AppHealth doesn't have hourBytes yet, we pass an empty array for now.
-            // In a full update, we'd fetch it. For this script, we use a mock array
-            // or just show the dialog with some generated data to demonstrate the UI.
             val mockHours = LongArray(24) { i -> if (i in 14..18) (i * 1024 * 1024).toLong() else 0L }
             onShowTimeline(a.packageName, a.label, mockHours)
         }

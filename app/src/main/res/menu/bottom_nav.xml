@@ -8,7 +8,6 @@
         android:icon="@android:drawable/ic_menu_sort_by_size"
         android:title="@string/tab_apps" />
     <item
-        android:id="@+id/nav_media"
         android:icon="@android:drawable/ic_menu_gallery"
         android:title="@string/tab_media" />
     <item

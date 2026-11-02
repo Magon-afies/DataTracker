@@ -15,7 +15,7 @@ class CacheCleanerService : AccessibilityService() {
 
     companion object {
         private val queue = ArrayDeque<String>()
-        private var state = 0 // 0 = Wait for Storage, 1 = Wait for Clear Cache
+        private var isProcessing = false
         private val handler = Handler(Looper.getMainLooper())
 
         fun isEnabled(context: Context): Boolean {
@@ -31,14 +31,14 @@ class CacheCleanerService : AccessibilityService() {
             if (packages.isEmpty()) return
             queue.clear()
             queue.addAll(packages)
-            state = 0
+            isProcessing = false
             processNext(context.applicationContext)
         }
 
         private fun processNext(context: Context) {
             if (queue.isEmpty()) return
             val pkg = queue.removeFirst()
-            state = 0
+            isProcessing = false
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                 data = Uri.parse("package:$pkg")
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -48,33 +48,65 @@ class CacheCleanerService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event?.packageName != "com.android.settings") return
-        val root = rootInActiveWindow ?: return
+        if (event?.packageName != "com.android.settings" || isProcessing) return
+        isProcessing = true
 
-        when (state) {
-            0 -> {
-                val node = findNode(root, listOf("Storage", "Storage & cache", "Storage usage"))
-                if (node != null && node.isClickable) {
-                    node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                    state = 1
-                }
+        // Wait 1 full second for the Settings screen to load
+        handler.postDelayed({
+            val root = rootInActiveWindow
+            if (root == null) {
+                isProcessing = false
+                return@postDelayed
             }
-            1 -> {
-                val node = findNode(root, listOf("Clear cache", "Clear Cache", "CLEAR CACHE"))
-                if (node != null && node.isClickable) {
-                    node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                    state = 0
+
+            // 1. Look for the "Storage" button
+            val storageNode = findNode(root, listOf("Storage", "Storage & cache", "Storage usage"))
+            if (storageNode != null) {
+                clickNode(storageNode)
+                // Wait 1 second for the Storage page to open, then clear cache
+                handler.postDelayed({
+                    val root2 = rootInActiveWindow
+                    if (root2 != null) {
+                        val clearNode = findNode(root2, listOf("Clear cache", "Clear Cache", "CLEAR CACHE"))
+                        if (clearNode != null) {
+                            clickNode(clearNode)
+                        }
+                    }
+                    // Wait 1.5 seconds for the clear to finish, then go Back and next app
                     handler.postDelayed({
-                        processNext(applicationContext)
+                        performGlobalAction(GLOBAL_ACTION_BACK)
+                        handler.postDelayed({
+                            processNext(applicationContext)
+                        }, 800)
                     }, 1500)
-                }
+                }, 1000)
+            } else {
+                // If Storage is not found, try scrolling
+                scrollDown(root)
+                isProcessing = false
             }
+        }, 1000)
+    }
+
+    private fun clickNode(node: AccessibilityNodeInfo) {
+        if (node.isClickable) node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+        else node.parent?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+    }
+
+    private fun scrollDown(root: AccessibilityNodeInfo) {
+        val q = ArrayDeque<AccessibilityNodeInfo>()
+        q.add(root)
+        while (q.isNotEmpty()) {
+            val n = q.removeFirst()
+            if (n.isScrollable) {
+                n.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+                return
+            }
+            for (i in 0 until n.childCount) n.getChild(i)?.let { q.add(it) }
         }
     }
 
     private fun findNode(root: AccessibilityNodeInfo, needles: List<String>): AccessibilityNodeInfo? {
-        val byId = root.findAccessibilityNodeInfosByViewId("com.android.settings:id/clear_cache_button")
-        if (byId.isNotEmpty()) return byId[0]
         val q = ArrayDeque<AccessibilityNodeInfo>()
         q.add(root)
         while (q.isNotEmpty()) {

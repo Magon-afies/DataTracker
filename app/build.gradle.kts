@@ -70,5 +70,4 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.6")
 
     // On-device OCR (bundled model — works fully offline, no Google account needed)
-    implementation("com.google.mlkit:text-recognition:16.0.1")
 }
