@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DataTracker</string>
+    <string name="usage_access_required">Usage access required</string>
+    <string name="grant_usage_access">Grant Usage Access</string>
+    <string name="notifications_off">Notifications are off</string>
+    <string name="open_notification_settings">Open Notification Settings</string>
     <string name="plan_title">Data Plan</string>
     <string name="plan_usage">--</string>
     <string name="plan_carrier">No active plan</string>
     <string name="data_usage_header">Data Usage</string>
     <string name="chart_header">History</string>
     <string name="top_apps_header">Top Apps</string>
-    <string name="health_title">App Health</string>
-    <string name="health_hint">Cache · storage · foreground time · background data</string>
+    <string name="plan_saved">Plan saved</string>
+    <string name="accessibility_desc">Helps clear app caches by automating the Settings menu.</string>
+    <string name="health_title">App health</string>
+    <string name="health_hint">Cache · storage · foreground time · background data — sorted by battery impact.</string>
     <string name="health_open_settings">Info</string>
     <string name="health_kill">Kill</string>
     <string name="health_clear_cache">Clear</string>
     <string name="health_optimize">Restrict</string>
     <string name="nav_health">Health</string>
-    <string name="usage_access_required">Usage access required</string>
-    <string name="grant_usage_access">Grant Access</string>
-    <string name="notifications_off">Notifications off</string>
-    <string name="open_notification_settings">Settings</string>
-    <string name="plan_saved">Plan saved</string>
-    <string name="accessibility_desc">Helps clear app caches.</string>
-    <string name="plan_price">Plan price</string>
+    <string name="plan_price">Plan price (₦)</string>
 </resources>
