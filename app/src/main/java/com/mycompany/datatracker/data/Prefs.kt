@@ -44,4 +44,8 @@ class Prefs(context: Context) {
         }
         editor.apply()
     }
+    /** Daily data limit in MB to trigger the report card warning. */
+    var dailyLimitMb: Int
+        get() = sp.getInt("daily_limit_mb", 500)
+        set(v) = sp.edit().putInt("daily_limit_mb", v.coerceAtLeast(1)).apply()
 }
