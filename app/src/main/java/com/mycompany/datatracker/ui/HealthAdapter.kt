@@ -17,6 +17,7 @@ class HealthAdapter(
     private val onOpenSettings: (String) -> Unit,
     private val onKill: (String) -> Unit,
     private val onClearCache: (String) -> Unit,
+    private val onRestrictBackground: (String) -> Unit,
     private val onShowTimeline: (String, String, LongArray) -> Unit
 ) : RecyclerView.Adapter<HealthAdapter.VH>() {
 
@@ -26,7 +27,8 @@ class HealthAdapter(
 
     fun submit(list: List<AppHealth>) {
         items.clear()
-        items.addAll(list)
+        // Sort by drain score (highest drain first)
+        items.addAll(list.sortedByDescending { it.batteryScore })
         notifyDataSetChanged()
     }
 
@@ -44,20 +46,17 @@ class HealthAdapter(
         val isZombie = (now - a.lastUsedMs > 30L * 24 * 3600 * 1000) && a.lastUsedMs > 0
         val zombieTag = if (isZombie) " 🧟 (Unused 30d+)" else ""
         
-        // BATTERY SCORE FEATURE
-        val batteryDrain = a.batteryScore.toInt()
-        val batteryTag = if (batteryDrain > 50) "🔥 HIGH BATTERY DRAIN ($batteryDrain pts)" else "🔋 Battery Drain: $batteryDrain pts"
+        val drain = a.batteryScore.toInt()
+        val drainLabel = if (drain > 50) "🔥 HIGH DRAIN" else "🔋 Drain: $drain pts"
         
-        h.meta.text = "$batteryTag\nFG " + (a.foregroundTimeMs / 60_000L) + "m · " +
+        h.meta.text = "$drainLabel\nFG " + (a.foregroundTimeMs / 60_000L) + "m · " +
             "BG " + FormatBytes.human(a.backgroundBytes) + " · " +
             "Net " + FormatBytes.human(a.networkBytes) + zombieTag
             
         h.storage.text = "Cache " + FormatBytes.human(a.cacheBytes) +
-            " · Data " + FormatBytes.human(a.dataBytes) +
-            " · APK " + FormatBytes.human(a.apkBytes)
+            " · Data " + FormatBytes.human(a.dataBytes)
             
-        h.last.text = if (a.lastUsedMs > 0L)
-            "Last used " + fmt.format(Date(a.lastUsedMs)) else "Not used today"
+        h.last.text = if (a.lastUsedMs > 0L) "Last used " + fmt.format(Date(a.lastUsedMs)) else "Not used today"
             
         h.itemView.setOnClickListener {
             val mockHours = LongArray(24) { i -> if (i in 14..18) (i * 1024 * 1024).toLong() else 0L }
@@ -65,6 +64,7 @@ class HealthAdapter(
         }
 
         h.btnSettings.setOnClickListener { onOpenSettings(a.packageName) }
+        h.btnRestrict.setOnClickListener { onRestrictBackground(a.packageName) }
         h.btnKill.setOnClickListener { onKill(a.packageName) }
         h.btnClearCache.setOnClickListener { onClearCache(a.packageName) }
     }
@@ -75,6 +75,7 @@ class HealthAdapter(
         val storage: TextView = v.findViewById(R.id.health_storage)
         val last: TextView = v.findViewById(R.id.health_last)
         val btnSettings: Button = v.findViewById(R.id.health_open_settings)
+        val btnRestrict: Button = v.findViewById(R.id.health_restrict_bg)
         val btnKill: Button = v.findViewById(R.id.health_kill)
         val btnClearCache: Button = v.findViewById(R.id.health_clear_cache)
     }

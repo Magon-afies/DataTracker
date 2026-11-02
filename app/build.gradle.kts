@@ -12,7 +12,7 @@ android {
         minSdk = 29          // Android 10+
         targetSdk = 35
         versionCode = 4
-        versionName = "2.2-naira"
+        versionName = "2.3-battery"
     }
 
     // Release signing comes from env vars (set by GitHub Actions secrets).

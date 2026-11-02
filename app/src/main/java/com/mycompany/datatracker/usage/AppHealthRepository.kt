@@ -55,7 +55,8 @@ class AppHealthRepository(context: Context) {
                     dataBytes = c?.data ?: 0L,
                     apkBytes = c?.apk ?: 0L,
                     foregroundTimeMs = fg?.totalTimeInForeground ?: 0L,
-                    lastUsedMs = fg?.lastTimeUsed ?: 0L
+                    lastUsedMs = fg?.lastTimeUsed ?: 0L,
+                    backgroundSessions = if ((u?.backgroundBytes ?: 0L) > 0L) 1 else 0
                 )
             )
         }

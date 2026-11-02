@@ -52,6 +52,7 @@ class HealthFragment : Fragment() {
             onOpenSettings = { pkg -> openAppSettings(pkg) },
             onKill = { pkg -> kill(pkg) },
             onClearCache = { pkg -> clearSingleCache(pkg) },
+            onRestrictBackground = { pkg -> restrictBackground(pkg) },
             onShowTimeline = { pkg, name, hours -> AppTimelineDialog.show(requireContext(), name, hours) }
         )
         rv.adapter = ad
@@ -103,6 +104,19 @@ class HealthFragment : Fragment() {
         }
         ad.submit(filteredItems)
         empty.visibility = if (filteredItems.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    
+    private fun restrictBackground(pkg: String) {
+        try {
+            // Try to open the specific battery optimization screen
+            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                .setData(Uri.parse("package:$pkg"))
+            startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback to App Info if battery screen isn't available
+            openAppSettings(pkg)
+        }
     }
 
     private fun openAppSettings(pkg: String) {
