@@ -4,27 +4,45 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 
-data class DataPlan(
-    val id: Long,
-    val sizeBytes: Long,
-    val carrier: String,
-    val startMs: Long,
-    val expiryMs: Long,
-    val firedMask: Int
-)
 
 data class PlanSnapshot(val usageBytes: Long, val capturedMs: Long, val trafficCounter: Long)
 
 /** Local plan lifecycle and cumulative mobile-usage snapshots. */
 class PlanStore(context: Context) {
+
+    private fun ensurePriceColumn(db: android.database.sqlite.SQLiteDatabase) {
+        try {
+            db.rawQuery("PRAGMA table_info(data_plans)", null).use { c ->
+                var has = false
+                while (c.moveToNext()) { if (c.getString(1) == "price_naira") has = true }
+                if (!has) db.execSQL("ALTER TABLE data_plans ADD COLUMN price_naira REAL NOT NULL DEFAULT 0")
+            }
+        } catch (_: Exception) {}
+    }
+
+
+    private fun ensurePriceColumn(db: android.database.sqlite.SQLiteDatabase) {
+        try {
+            db.rawQuery("PRAGMA table_info(data_plans)", null).use { c ->
+                var has = false
+                while (c.moveToNext()) { if (c.getString(1) == "price_naira") has = true }
+                if (!has) db.execSQL("ALTER TABLE data_plans ADD COLUMN price_naira REAL NOT NULL DEFAULT 0")
+            }
+        } catch (_: Exception) {}
+    }
+
     private val db = Db.get(context)
 
-    fun create(sizeBytes: Long, carrier: String, startMs: Long, expiryMs: Long): Long {
+    init { ensurePriceColumn(Db.get(context).writableDatabase) }
+    init { ensurePriceColumn(Db.get(context).writableDatabase) }
+    fun create(sizeBytes: Long, carrier: String, startMs: Long, expiryMs: Long, priceNaira: Double): Long {
         val values = ContentValues().apply {
             put("size_bytes", sizeBytes)
             put("carrier", carrier)
             put("start_ms", startMs)
             put("expiry_ms", expiryMs)
+            put("price_naira", priceNaira)
+            put("price_naira", priceNaira)
             put("fired_mask", 0)
         }
         return db.writableDatabase.insert("data_plans", null, values)

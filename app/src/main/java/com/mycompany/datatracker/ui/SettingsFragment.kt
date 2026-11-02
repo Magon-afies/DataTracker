@@ -20,6 +20,7 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.mycompany.datatracker.R
+import com.mycompany.datatracker.autopsy.AutopsyService
 import com.mycompany.datatracker.data.Prefs
 import com.mycompany.datatracker.data.PlanStore
 import com.mycompany.datatracker.util.FormatBytes
@@ -55,6 +56,8 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
 
         view.findViewById<Button>(R.id.btn_save_plan).setOnClickListener {
             val size = view.findViewById<EditText>(R.id.plan_size).text.toString().toDoubleOrNull()
+            val price = view.findViewById<EditText>(R.id.plan_price).text.toString().toDoubleOrNull() ?: 0.0
+            val price = view.findViewById<EditText>(R.id.plan_price).text.toString().toDoubleOrNull() ?: 0.0
             val carrier = view.findViewById<EditText>(R.id.plan_carrier).text.toString().trim()
             val start = parseDate(view.findViewById<EditText>(R.id.plan_start).text.toString(), false)
             val end = parseDate(view.findViewById<EditText>(R.id.plan_expiry).text.toString(), true)
@@ -62,8 +65,9 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
                 Toast.makeText(requireContext(), "Enter a valid plan, carrier and dates", Toast.LENGTH_SHORT).show()
             } else {
                 val multiplier = if (view.findViewById<Spinner>(R.id.plan_unit).selectedItemPosition == 1) 1024.0 else 1.0
-                PlanStore(requireContext()).create((size * multiplier * 1024.0 * 1024.0).toLong(), carrier, start, end)
+                PlanStore(requireContext()).create((size * multiplier * 1024.0 * 1024.0).toLong(), carrier, start, end, price)
                 SnapshotWorker.schedule(requireContext())
+                AutopsyService.start(requireContext())
                 Toast.makeText(requireContext(), R.string.plan_saved, Toast.LENGTH_SHORT).show()
             }
         }
@@ -73,6 +77,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
             prefs.appCapMb = appCap.text.toString().toIntOrNull() ?: 0
             prefs.bgCapMb = bgCap.text.toString().toIntOrNull() ?: 0
             prefs.debugUsagePercent = debug.text.toString().toIntOrNull() ?: 0
+            if (enabled.isChecked) AutopsyService.start(requireContext())
             Toast.makeText(requireContext(), R.string.settings_saved, Toast.LENGTH_SHORT).show()
         }
 
