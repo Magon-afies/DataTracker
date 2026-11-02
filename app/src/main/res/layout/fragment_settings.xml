@@ -33,7 +33,7 @@
             android:id="@+id/plan_price"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Plan price (₦)"
+            android:hint="@string/plan_price"
             android:inputType="numberDecimal" />
 
         <EditText

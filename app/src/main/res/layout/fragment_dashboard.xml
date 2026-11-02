@@ -11,57 +11,14 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
-            android:id="@+id/usage_banner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/usage_access_required"
-            android:textColor="#B00020"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/btn_grant"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/grant_usage_access"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/notification_banner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/notifications_off"
-            android:textColor="#B26A00"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/btn_notification_settings"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/open_notification_settings"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/btn_run_autopsy"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/run_autopsy" />
-
         <com.mycompany.datatracker.ui.ReportCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp" />
+            android:layout_marginBottom="16dp" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             app:cardBackgroundColor="@color/surface_elevated"
             app:cardCornerRadius="20dp"
             app:contentPadding="18dp">
@@ -126,20 +83,6 @@
             android:textSize="16sp" />
 
         <TextView
-            android:id="@+id/total_week"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/total_month"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textSize="16sp" />
-
-        <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
@@ -164,7 +107,5 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:nestedScrollingEnabled="false" />
-
     </LinearLayout>
-
 </androidx.core.widget.NestedScrollView>
