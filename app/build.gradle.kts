@@ -9,9 +9,9 @@ android {
 
     defaultConfig {
         applicationId = "com.mycompany.datatracker"
-        minSdk = 29          // Android 10+
+        minSdk = 29
         targetSdk = 35
-        versionCode = 15(System.getenv("VERSION_CODE") ?: "1").toInt()
+        versionCode = 15
         versionName = "2.13"
     }
 
@@ -34,7 +34,6 @@ android {
             signingConfig = if (keystorePath != null) {
                 signingConfigs.getByName("release")
             } else {
-                // Local builds without the keystore still work (debug-signed).
                 signingConfigs.getByName("debug")
             }
         }
@@ -49,7 +48,6 @@ android {
         jvmTarget = "17"
     }
 
-    // Keep CI builds from failing on lint warnings
     lint {
         abortOnError = false
         checkReleaseBuilds = false
@@ -64,11 +62,8 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-
-    // Background snapshots, alerts, and the resumable photo scan
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.6")
-
     // On-device OCR (bundled model — works fully offline, no Google account needed)
     implementation("com.google.mlkit:text-recognition:16.0.1")
 }
