@@ -21,4 +21,6 @@
     <string name="health_optimize">Restrict</string>
     <string name="nav_health">Health</string>
     <string name="plan_price">Plan price (₦)</string>
+    <string name="plan_unit_mb">MB</string>
+    <string name="plan_unit_gb">GB</string>
 </resources>
