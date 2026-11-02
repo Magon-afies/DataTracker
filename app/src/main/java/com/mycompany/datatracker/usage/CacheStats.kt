@@ -2,7 +2,7 @@ package com.mycompany.datatracker.usage
 
 import android.app.usage.StorageStatsManager
 import android.content.Context
-import android.os.Process
+import android.os.UserHandle
 import android.os.storage.StorageManager
 
 class CacheStats(context: Context) {
@@ -17,7 +17,7 @@ class CacheStats(context: Context) {
         val mgr = ssm ?: return null
         return try {
             val s = mgr.queryStatsForPackage(
-                StorageManager.UUID_DEFAULT, pkg, Process.myUserHandle()
+                StorageManager.UUID_DEFAULT, pkg, UserHandle.getUserHandleForUid(0)
             )
             Sizes(s.cacheBytes, s.dataBytes, s.appBytes)
         } catch (_: Exception) {

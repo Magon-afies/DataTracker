@@ -11,8 +11,8 @@ android {
         applicationId = "com.mycompany.datatracker"
         minSdk = 29          // Android 10+
         targetSdk = 35
-        versionCode = 14
-        versionName = "2.12"
+        versionCode = 15(System.getenv("VERSION_CODE") ?: "1").toInt()
+        versionName = "2.13"
     }
 
     // Release signing comes from env vars (set by GitHub Actions secrets).
@@ -70,4 +70,5 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.6")
 
     // On-device OCR (bundled model — works fully offline, no Google account needed)
+    implementation("com.google.mlkit:text-recognition:16.0.1")
 }
