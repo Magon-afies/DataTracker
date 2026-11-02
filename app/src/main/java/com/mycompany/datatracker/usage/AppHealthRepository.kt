@@ -13,25 +13,29 @@ class AppHealthRepository(context: Context) {
     private val usm: UsageStatsManager? = app.getSystemService(UsageStatsManager::class.java)
     private val pm: PackageManager = app.packageManager
 
-    fun snapshot(now: Long = System.currentTimeMillis()): List<AppHealth> {
-        val start = startOfDay(now)
-        val usageApps = usage.query(start, now).associateBy { it.packageName }
+    companion object {
+        private var cachedList: List<AppHealth>? = null
+        private var lastCacheTime = 0L
+        private const val CACHE_TTL = 3 * 60_000L
+    }
 
-        val agg = try {
-            usm?.queryAndAggregateUsageStats(start, now) ?: emptyMap()
-        } catch (_: Exception) {
-            emptyMap()
+    fun snapshot(now: Long = System.currentTimeMillis(), forceRefresh: Boolean = false): List<AppHealth> {
+        if (!forceRefresh && cachedList != null && (now - lastCacheTime) < CACHE_TTL) {
+            return cachedList!!
         }
 
+        val start = startOfDay(now)
+        val usageApps = usage.query(start, now).associateBy { it.packageName }
+        val agg = try {
+            usm?.queryAndAggregateUsageStats(start, now) ?: emptyMap()
+        } catch (_: Exception) { emptyMap() }
+
         val out = ArrayList<AppHealth>()
-        
-        // Scan ALL installed apps, not just ones with network usage today
         val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+        
         for (pkgInfo in packages) {
             val isSystem = (pkgInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
             val hasUsage = usageApps.containsKey(pkgInfo.packageName)
-            
-            // Skip system apps unless they actually used data today
             if (isSystem && !hasUsage) continue
 
             val pkg = pkgInfo.packageName
@@ -39,7 +43,6 @@ class AppHealthRepository(context: Context) {
             val u = usageApps[pkg]
             val fg = agg[pkg]
             
-            // Skip if it has 0 cache and 0 usage
             if ((c == null || c.total == 0L) && u == null) continue
 
             val label = pm.getApplicationLabel(pkgInfo).toString()
@@ -60,14 +63,16 @@ class AppHealthRepository(context: Context) {
                 )
             )
         }
-        return out.sortedByDescending { it.cacheBytes }
+        
+        val sorted = out.sortedByDescending { it.cacheBytes }
+        cachedList = sorted
+        lastCacheTime = now
+        return sorted
     }
 
     private fun startOfDay(now: Long): Long = Calendar.getInstance().apply {
         timeInMillis = now
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
+        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
     }.timeInMillis
 }

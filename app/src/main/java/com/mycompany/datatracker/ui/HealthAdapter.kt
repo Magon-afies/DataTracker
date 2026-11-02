@@ -27,7 +27,6 @@ class HealthAdapter(
 
     fun submit(list: List<AppHealth>) {
         items.clear()
-        // Sort by drain score (highest drain first)
         items.addAll(list.sortedByDescending { it.batteryScore })
         notifyDataSetChanged()
     }
@@ -42,10 +41,8 @@ class HealthAdapter(
     override fun onBindViewHolder(h: VH, position: Int) {
         val a = items[position]
         h.label.text = a.label
-        
         val isZombie = (now - a.lastUsedMs > 30L * 24 * 3600 * 1000) && a.lastUsedMs > 0
         val zombieTag = if (isZombie) " 🧟 (Unused 30d+)" else ""
-        
         val drain = a.batteryScore.toInt()
         val drainLabel = if (drain > 50) "🔥 HIGH DRAIN" else "🔋 Drain: $drain pts"
         
@@ -53,9 +50,7 @@ class HealthAdapter(
             "BG " + FormatBytes.human(a.backgroundBytes) + " · " +
             "Net " + FormatBytes.human(a.networkBytes) + zombieTag
             
-        h.storage.text = "Cache " + FormatBytes.human(a.cacheBytes) +
-            " · Data " + FormatBytes.human(a.dataBytes)
-            
+        h.storage.text = "Cache " + FormatBytes.human(a.cacheBytes) + " · Data " + FormatBytes.human(a.dataBytes)
         h.last.text = if (a.lastUsedMs > 0L) "Last used " + fmt.format(Date(a.lastUsedMs)) else "Not used today"
             
         h.itemView.setOnClickListener {

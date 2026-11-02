@@ -15,7 +15,6 @@ data class AppHealth(
     val backgroundSessions: Int
 ) {
     val storageBytes: Long get() = cacheBytes + dataBytes + apkBytes
-    /** Weighted Drain Score: FG time + BG bytes + BG sessions */
     val batteryScore: Double
         get() = (foregroundTimeMs / 60_000.0) + (backgroundBytes / 1_048_576.0) + (backgroundSessions * 5.0)
 }
