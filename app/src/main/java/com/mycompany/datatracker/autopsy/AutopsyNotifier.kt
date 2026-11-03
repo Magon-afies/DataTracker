@@ -12,6 +12,8 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.mycompany.datatracker.MainActivity
 import com.mycompany.datatracker.R
+import com.mycompany.datatracker.data.Naira
+import com.mycompany.datatracker.data.PlanStore
 import com.mycompany.datatracker.work.Alerts
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -50,16 +52,24 @@ object AutopsyNotifier {
         val fmt = SimpleDateFormat("HH:mm", Locale.getDefault())
         val window = "${fmt.format(Date(spike.from))}–${fmt.format(Date(spike.to))}"
         val short = "$window · ${spike.screen}"
+        val plan = try { PlanStore(context).active() } catch (_: Exception) { null }
+        val spikeNaira = plan?.nairaFor(minOf(spike.bytes, spike.mobileBytes)) ?: 0.0
+        val title = if (spikeNaira > 0.0) {
+            "${spike.label} used ${mb(spike.bytes)} (≈ ${Naira.format(spikeNaira)})"
+        } else {
+            "${spike.label} used ${mb(spike.bytes)}"
+        }
         val big = buildString {
             append(window).append(" · ").append(spike.screen).append('\n')
             append("Mobile ").append(mb(spike.mobileBytes))
             append(" · Wi-Fi ").append(mb(spike.wifiBytes)).append('\n')
             append("Background ").append(mb(spike.bgBytes))
             append(" of ").append(mb(spike.totalBytes)).append(" total")
+            if (spikeNaira > 0.0) append('\n').append("≈ ").append(Naira.format(spikeNaira)).append(" of mobile data")
         }
         val n = NotificationCompat.Builder(context, CHANNEL_ALERT)
             .setSmallIcon(R.drawable.ic_stat_datatracker)
-            .setContentTitle("${spike.label} used ${mb(spike.bytes)}")
+            .setContentTitle(title)
             .setContentText(short)
             .setStyle(NotificationCompat.BigTextStyle().bigText(big))
             .setContentIntent(openApp(context))

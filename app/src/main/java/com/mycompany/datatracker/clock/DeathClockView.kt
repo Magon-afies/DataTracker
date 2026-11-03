@@ -9,6 +9,8 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.card.MaterialCardView
 import com.mycompany.datatracker.R
+import com.mycompany.datatracker.data.Naira
+import com.mycompany.datatracker.data.PlanStore
 import com.mycompany.datatracker.util.FormatBytes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +34,7 @@ class DeathClockView(context: Context, attrs: AttributeSet? = null) :
     private val dateFormat = SimpleDateFormat("EEE d MMM, HH:mm", Locale.getDefault())
     private var scope: CoroutineScope? = null
     private var state: DeathClockState? = null
+    private var nairaPerByte: Double = 0.0
 
     init {
         radius = dp(20).toFloat()
@@ -78,10 +81,16 @@ class DeathClockView(context: Context, attrs: AttributeSet? = null) :
                 val now = System.currentTimeMillis()
                 if (now - lastCompute >= REFRESH_MS) {
                     lastCompute = now
-                    val next = withContext(Dispatchers.Default) {
-                        runCatching { DeathClock.compute(app, now) }.getOrNull()
+                    val (next, price) = withContext(Dispatchers.Default) {
+                        val computed = runCatching { DeathClock.compute(app, now) }.getOrNull()
+                        val perByte = runCatching { PlanStore(app).active(now)?.nairaPerByte ?: 0.0 }
+                            .getOrDefault(0.0)
+                        computed to perByte
                     }
-                    if (next != null) state = next
+                    if (next != null) {
+                        state = next
+                        nairaPerByte = price
+                    }
                 }
                 render(System.currentTimeMillis())
                 delay(1000L - System.currentTimeMillis() % 1000L)
@@ -123,9 +132,12 @@ class DeathClockView(context: Context, attrs: AttributeSet? = null) :
                 val left = (s.deathMs - now).coerceAtLeast(0L)
                 countdown.text = format(left)
                 countdown.setTextColor(if (left < 6L * 3_600_000L) urgentColor else normalColor)
+                val nairaHour = if (nairaPerByte > 0.0) {
+                    " (≈ ${Naira.format(s.bytesPerHour * nairaPerByte)}/hour)"
+                } else ""
                 val line = "Zero at ${dateFormat.format(Date(s.deathMs))} · " +
                     "${FormatBytes.human(s.remainingBytes)} left · " +
-                    "burning ${FormatBytes.human(s.bytesPerHour.toLong())}/h"
+                    "burning ${FormatBytes.human(s.bytesPerHour.toLong())}/h$nairaHour"
                 detail.text = if (s.outlastsPlan) {
                     line + "\nPlan expires ${dateFormat.format(Date(s.expiryMs))} first — at this pace it will last."
                 } else line

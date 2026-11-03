@@ -45,6 +45,11 @@
             android:text="@string/open_notification_settings"
             android:visibility="gone" />
 
+        <com.mycompany.datatracker.ui.SetupChecklistCard
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" />
+
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -152,6 +157,12 @@
             android:layout_height="wrap_content"
             android:nestedScrollingEnabled="false" />
 
+
+        <com.mycompany.datatracker.ui.ShareCard
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="16dp" />
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>

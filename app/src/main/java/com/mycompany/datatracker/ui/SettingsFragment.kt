@@ -56,13 +56,17 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         view.findViewById<Button>(R.id.btn_save_plan).setOnClickListener {
             val size = view.findViewById<EditText>(R.id.plan_size).text.toString().toDoubleOrNull()
             val carrier = view.findViewById<EditText>(R.id.plan_carrier).text.toString().trim()
+            val price = view.findViewById<EditText>(R.id.plan_price).text.toString()
+                .replace(",", "").trim().toDoubleOrNull() ?: 0.0
             val start = parseDate(view.findViewById<EditText>(R.id.plan_start).text.toString(), false)
             val end = parseDate(view.findViewById<EditText>(R.id.plan_expiry).text.toString(), true)
             if (size == null || size <= 0 || carrier.isBlank() || start == null || end == null || end < start) {
                 Toast.makeText(requireContext(), "Enter a valid plan, carrier and dates", Toast.LENGTH_SHORT).show()
             } else {
                 val multiplier = if (view.findViewById<Spinner>(R.id.plan_unit).selectedItemPosition == 1) 1024.0 else 1.0
-                PlanStore(requireContext()).create((size * multiplier * 1024.0 * 1024.0).toLong(), carrier, start, end)
+                PlanStore(requireContext()).create(
+                    (size * multiplier * 1024.0 * 1024.0).toLong(), carrier, start, end, price.coerceAtLeast(0.0)
+                )
                 SnapshotWorker.schedule(requireContext())
                 Toast.makeText(requireContext(), R.string.plan_saved, Toast.LENGTH_SHORT).show()
             }

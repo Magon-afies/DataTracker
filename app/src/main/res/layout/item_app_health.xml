@@ -29,6 +29,13 @@
             android:textColor="@color/on_surface" />
 
         <TextView
+            android:id="@+id/health_drain"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/on_surface_muted" />
+
+        <TextView
             android:id="@+id/health_storage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -80,5 +87,15 @@
                 android:text="@string/health_kill"
                 android:textSize="12sp" />
         </LinearLayout>
+
+        <Button
+            android:id="@+id/health_restrict"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:paddingHorizontal="4dp"
+            android:text="@string/health_restrict"
+            android:textSize="12sp" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

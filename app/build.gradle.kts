@@ -11,8 +11,8 @@ android {
         applicationId = "com.mycompany.datatracker"
         minSdk = 29
         targetSdk = 35
-        versionCode = 15
-        versionName = "2.13"
+        versionCode = 20
+        versionName = "3.0"
     }
 
     // Release signing comes from env vars (set by GitHub Actions secrets).

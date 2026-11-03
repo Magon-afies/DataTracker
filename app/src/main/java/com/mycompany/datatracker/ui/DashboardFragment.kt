@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mycompany.datatracker.R
 import com.mycompany.datatracker.data.HistoryStore
+import com.mycompany.datatracker.data.Naira
 import com.mycompany.datatracker.data.Prefs
 import com.mycompany.datatracker.usage.UsageRepository
 import com.mycompany.datatracker.util.Dates
@@ -108,7 +109,14 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
                 } else {
                     planText.text = "${planUsage.percent}% used · ${FormatBytes.human(planUsage.usedBytes)} / " +
                         FormatBytes.human(planUsage.plan.sizeBytes)
-                    planCarrier.text = "${planUsage.plan.carrier} · expires ${Dates.day(planUsage.plan.expiryMs)}"
+                    val nairaLine = if (planUsage.plan.priceNaira > 0.0) {
+                        "\n≈ ${Naira.format(planUsage.plan.nairaFor(planUsage.usedBytes))} burned so far · " +
+                            "${Naira.format(planUsage.plan.nairaPerGb)}/GB"
+                    } else {
+                        "\nAdd the plan price in Alerts to see ₦ burn"
+                    }
+                    planCarrier.text = "${planUsage.plan.carrier} · expires " +
+                        "${Dates.day(planUsage.plan.expiryMs)}$nairaLine"
                     progress.progress = planUsage.percent
                 }
                 view.findViewById<BarChartView>(R.id.history_chart).setData(labels, mobile, wifi)

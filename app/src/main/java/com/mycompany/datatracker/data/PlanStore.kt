@@ -4,28 +4,37 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 
-data class DataPlan(
-    val id: Long,
-    val sizeBytes: Long,
-    val carrier: String,
-    val startMs: Long,
-    val expiryMs: Long,
-    val firedMask: Int
-)
-
 data class PlanSnapshot(val usageBytes: Long, val capturedMs: Long, val trafficCounter: Long)
 
 /** Local plan lifecycle and cumulative mobile-usage snapshots. */
 class PlanStore(context: Context) {
     private val db = Db.get(context)
 
-    fun create(sizeBytes: Long, carrier: String, startMs: Long, expiryMs: Long): Long {
+    init {
+        if (!priceColumnReady) {
+            synchronized(PlanStore::class.java) {
+                if (!priceColumnReady) {
+                    ensurePriceColumn(db.writableDatabase)
+                    priceColumnReady = true
+                }
+            }
+        }
+    }
+
+    fun create(
+        sizeBytes: Long,
+        carrier: String,
+        startMs: Long,
+        expiryMs: Long,
+        priceNaira: Double = 0.0
+    ): Long {
         val values = ContentValues().apply {
             put("size_bytes", sizeBytes)
             put("carrier", carrier)
             put("start_ms", startMs)
             put("expiry_ms", expiryMs)
             put("fired_mask", 0)
+            put("price_naira", priceNaira.coerceAtLeast(0.0))
         }
         return db.writableDatabase.insert("data_plans", null, values)
     }
@@ -72,12 +81,37 @@ class PlanStore(context: Context) {
             .use { c -> return if (c.moveToFirst()) c.toPlan() else null }
     }
 
-    private fun android.database.Cursor.toPlan() = DataPlan(
-        getLong(getColumnIndexOrThrow("id")),
-        getLong(getColumnIndexOrThrow("size_bytes")),
-        getString(getColumnIndexOrThrow("carrier")),
-        getLong(getColumnIndexOrThrow("start_ms")),
-        getLong(getColumnIndexOrThrow("expiry_ms")),
-        getInt(getColumnIndexOrThrow("fired_mask"))
-    )
+    private fun ensurePriceColumn(sdb: SQLiteDatabase) {
+        var found = false
+        sdb.rawQuery("PRAGMA table_info(data_plans)", null).use { c ->
+            val nameIndex = c.getColumnIndex("name")
+            while (c.moveToNext()) {
+                if (c.getString(nameIndex) == "price_naira") {
+                    found = true
+                    break
+                }
+            }
+        }
+        if (!found) {
+            sdb.execSQL("ALTER TABLE data_plans ADD COLUMN price_naira REAL NOT NULL DEFAULT 0")
+        }
+    }
+
+    private fun android.database.Cursor.toPlan(): DataPlan {
+        val priceIndex = getColumnIndex("price_naira")
+        return DataPlan(
+            id = getLong(getColumnIndexOrThrow("id")),
+            sizeBytes = getLong(getColumnIndexOrThrow("size_bytes")),
+            carrier = getString(getColumnIndexOrThrow("carrier")),
+            startMs = getLong(getColumnIndexOrThrow("start_ms")),
+            expiryMs = getLong(getColumnIndexOrThrow("expiry_ms")),
+            priceNaira = if (priceIndex >= 0) getDouble(priceIndex) else 0.0,
+            firedMask = getInt(getColumnIndexOrThrow("fired_mask"))
+        )
+    }
+
+    companion object {
+        @Volatile
+        private var priceColumnReady = false
+    }
 }

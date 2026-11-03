@@ -40,6 +40,13 @@
         </LinearLayout>
 
         <EditText
+            android:id="@+id/plan_price"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/plan_price_hint"
+            android:inputType="numberDecimal" />
+
+        <EditText
             android:id="@+id/plan_carrier"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -39,11 +39,12 @@ class AppHealthRepository(context: Context) {
                     dataBytes = c?.data ?: 0L,
                     apkBytes = c?.apk ?: 0L,
                     foregroundTimeMs = fg?.totalTimeInForeground ?: 0L,
-                    lastUsedMs = fg?.lastTimeUsed ?: 0L
+                    lastUsedMs = fg?.lastTimeUsed ?: 0L,
+                    backgroundSessions = if (a.backgroundBytes > 0L) 1 else 0
                 )
             )
         }
-        return out.sortedByDescending { it.batteryScore }
+        return out.sortedByDescending { it.drainScore }
     }
 
     private fun startOfDay(now: Long): Long = Calendar.getInstance().apply {

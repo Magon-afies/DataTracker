@@ -10,19 +10,17 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mycompany.datatracker.R
 import com.mycompany.datatracker.autopsy.CacheCleanerService
 import com.mycompany.datatracker.usage.AppHealthRepository
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class HealthFragment : Fragment() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var adapter: HealthAdapter? = null
 
     override fun onCreateView(
@@ -36,17 +34,15 @@ class HealthFragment : Fragment() {
         val ad = HealthAdapter(
             onOpenSettings = { pkg -> openAppSettings(pkg) },
             onKill = { pkg -> kill(pkg) },
-            onClearCache = { pkg -> clearCache(pkg) }
+            onClearCache = { pkg -> clearCache(pkg) },
+            onRestrict = { pkg -> restrict(pkg) }
         )
         rv.adapter = ad
         adapter = ad
 
-        scope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             val items = withContext(Dispatchers.IO) {
-                runCatching {
-                    AppHealthRepository(app).snapshot()
-                        .sortedByDescending { it.cacheBytes }
-                }.getOrNull() ?: emptyList()
+                runCatching { AppHealthRepository(app).snapshot() }.getOrNull() ?: emptyList()
             }
             if (isAdded) ad.submit(items)
         }
@@ -60,6 +56,21 @@ class HealthFragment : Fragment() {
             )
         } catch (e: Exception) {
             Toast.makeText(requireContext(), e.message ?: "Cannot open", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun restrict(pkg: String) {
+        try {
+            startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+        } catch (_: Exception) {
+            try {
+                startActivity(
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        .setData(Uri.parse("package:$pkg"))
+                )
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), e.message ?: "Cannot open", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

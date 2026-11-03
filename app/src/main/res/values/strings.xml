@@ -76,4 +76,20 @@
     <string name="health_kill">Kill bg</string>
     <string name="health_clear_cache">Clear cache</string>
     <string name="accessibility_desc">Helps clear app caches by automating the Settings menu.</string>
+    <string name="plan_price_hint">Price paid (₦)</string>
+    <string name="health_restrict">Restrict</string>
+    <string name="battery_title">Battery Health</string>
+    <string name="setup_title">Get set up</string>
+    <string name="setup_usage">Usage access (required)</string>
+    <string name="setup_notifications">Notifications for alerts</string>
+    <string name="setup_battery">Keep Data Autopsy running</string>
+    <string name="setup_plan">Data plan (add it in the Alerts tab)</string>
+    <string name="setup_allow">Allow</string>
+    <string name="setup_fix">Fix</string>
+    <string name="share_title">Share and about</string>
+    <string name="share_report">Share my report</string>
+    <string name="share_app">Share this app</string>
+    <string name="share_privacy">Free to use. Nothing is uploaded - your usage data stays on this phone.</string>
+    <string name="share_app_text">Data Tracker is free. Open the attached APK to install it (allow installs from this source if asked). If Play Protect warns you, tap More details, then Install anyway. Your usage data never leaves your phone.</string>
+    <string name="share_failed">Could not prepare the share. Please try again.</string>
 </resources>

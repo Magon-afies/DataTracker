@@ -5,6 +5,12 @@
     android:orientation="vertical"
     android:padding="12dp">
 
+    <com.mycompany.datatracker.ui.BatteryHealthCard
+        android:id="@+id/battery_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -23,5 +29,6 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/health_list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 </LinearLayout>
