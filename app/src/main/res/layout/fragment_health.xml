@@ -11,6 +11,13 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/health_clean_all"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:text="@string/bot_clean_all" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

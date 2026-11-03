@@ -8,6 +8,7 @@ import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -15,6 +16,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mycompany.datatracker.R
 import com.mycompany.datatracker.autopsy.CacheCleanerService
+import com.mycompany.datatracker.cleaner.CacheBot
+import com.mycompany.datatracker.cleaner.CacheBotActivity
 import com.mycompany.datatracker.usage.AppHealthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,17 +37,51 @@ class HealthFragment : Fragment() {
         val ad = HealthAdapter(
             onOpenSettings = { pkg -> openAppSettings(pkg) },
             onKill = { pkg -> kill(pkg) },
-            onClearCache = { pkg -> clearCache(pkg) },
+            onClearCache = { pkg -> cleanCaches(listOf(pkg)) },
             onRestrict = { pkg -> restrict(pkg) }
         )
         rv.adapter = ad
         adapter = ad
+
+        view.findViewById<Button>(R.id.health_clean_all).setOnClickListener { cleanAll() }
 
         viewLifecycleOwner.lifecycleScope.launch {
             val items = withContext(Dispatchers.IO) {
                 runCatching { AppHealthRepository(app).snapshot() }.getOrNull() ?: emptyList()
             }
             if (isAdded) ad.submit(items)
+        }
+    }
+
+    private fun accessibilityReady(): Boolean {
+        val ctx = requireContext()
+        if (CacheCleanerService.isEnabled(ctx)) return true
+        Toast.makeText(ctx, R.string.bot_need_access, Toast.LENGTH_LONG).show()
+        try {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        } catch (_: Exception) {
+        }
+        return false
+    }
+
+    private fun cleanCaches(packages: List<String>) {
+        if (!accessibilityReady()) return
+        CacheBotActivity.start(requireContext(), packages)
+    }
+
+    private fun cleanAll() {
+        if (!accessibilityReady()) return
+        val app = requireContext().applicationContext
+        viewLifecycleOwner.lifecycleScope.launch {
+            val targets = withContext(Dispatchers.IO) {
+                runCatching { CacheBot.targets(app) }.getOrDefault(emptyList())
+            }
+            if (!isAdded) return@launch
+            if (targets.isEmpty()) {
+                Toast.makeText(requireContext(), R.string.bot_nothing, Toast.LENGTH_LONG).show()
+            } else {
+                CacheBotActivity.start(requireContext(), targets.map { it.packageName })
+            }
         }
     }
 
@@ -82,28 +119,6 @@ class HealthFragment : Fragment() {
             Toast.makeText(requireContext(), "Killed $pkg", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(requireContext(), e.message ?: "Cannot kill", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun clearCache(pkg: String) {
-        val ctx = requireContext()
-        if (!CacheCleanerService.isEnabled(ctx)) {
-            Toast.makeText(
-                ctx,
-                "Enable DataTracker Accessibility first, then tap again",
-                Toast.LENGTH_LONG
-            ).show()
-            try { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) } catch (_: Exception) {}
-            return
-        }
-        try {
-            startActivity(
-                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                    .setData(Uri.parse("package:$pkg"))
-            )
-            Toast.makeText(ctx, "Auto-clearing $pkg …", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Toast.makeText(ctx, e.message ?: "Cannot open", Toast.LENGTH_SHORT).show()
         }
     }
 

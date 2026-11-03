@@ -3,7 +3,7 @@
     <string name="brand_product">A product of CrestPoint</string>
     <string name="brand_credit">Built with love by Magnificent Afiesimama</string>
     <string name="intro_tagline">See your data clearly.</string>
-    <string name="intro_subtitle">A calmer way to understand your apps, media and everyday usage.</string>
+    <string name="intro_subtitle">A calmer way to understand your apps and everyday usage.</string>
     <string name="intro_content_description">Data Tracker logo</string>
     <string name="plan_title">Your data plan</string>
     <string name="plan_usage">No active plan yet</string>
@@ -22,16 +22,10 @@
     <string name="debug_clear">Clear debug override</string>
     <string name="tab_dashboard">Dashboard</string>
     <string name="tab_apps">Apps</string>
-    <string name="tab_media">Media</string>
     <string name="usage_access_required">⚠️ Usage access required — tap the button below, find “Data Tracker” in the list, and allow it. Then come back to this screen.</string>
     <string name="grant_usage_access">Grant usage access</string>
     <string name="data_usage_header">Data usage</string>
     <string name="top_apps_header">Top apps today</string>
-    <string name="media_intro">Scan your photos: identical and similar images are grouped together, and text inside them is read on your device (OCR). Nothing is uploaded anywhere.</string>
-    <string name="scan_images">Scan photos</string>
-    <string name="scanning">Preparing scan…</string>
-    <string name="scan_progress">Analyzing %1$d / %2$d photos</string>
-    <string name="scan_done">Done — %1$d groups found</string>
     <string name="group_meta">%1$d images</string>
     <string name="group_no_text">No readable text</string>
     <string name="tab_today">Today</string>
@@ -41,12 +35,6 @@
     <string name="chart_header">Last 14 days (purple = mobile, blue = Wi-Fi)</string>
     <string name="restrict_data">Restrict data</string>
     <string name="app_info">App info</string>
-    <string name="scan_pdfs">Scan PDFs…</string>
-    <string name="nothing_indexed">Nothing indexed yet — tap Scan photos.</string>
-    <string name="scan_summary">%1$d items indexed · %2$d groups</string>
-    <string name="pdf_scanning">Reading %1$d PDF(s)…</string>
-    <string name="photo_access_denied">Photo access was denied. Allow it to scan your photos.</string>
-    <string name="partial_note">You allowed only some photos. Tap here to choose more or allow all.</string>
     <string name="cannot_open">No app found to open this file.</string>
     <string name="delete_extras">Delete %1$d extra copies</string>
     <string name="delete_title">Move %1$d copies to trash?</string>
@@ -92,4 +80,10 @@
     <string name="share_privacy">Free to use. Nothing is uploaded - your usage data stays on this phone.</string>
     <string name="share_app_text">Data Tracker is free. Open the attached APK to install it (allow installs from this source if asked). If Play Protect warns you, tap More details, then Install anyway. Your usage data never leaves your phone.</string>
     <string name="share_failed">Could not prepare the share. Please try again.</string>
+    <string name="bot_title">Auto Cache Cleaner</string>
+    <string name="bot_clean_all">Auto-clean all caches</string>
+    <string name="bot_cancel">Cancel</string>
+    <string name="bot_close">Close</string>
+    <string name="bot_nothing">No app caches to clear right now.</string>
+    <string name="bot_need_access">Turn on Data Tracker in Accessibility settings (Installed apps), then tap again. If the switch is greyed out: App info &gt; menu &gt; Allow restricted settings.</string>
 </resources>

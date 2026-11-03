@@ -35,10 +35,12 @@ class UsageRepository(private val context: Context) {
     }
 
     /**
-     * Reads per-app traffic counters kept by Android itself, between two
-     * timestamps, using the public NetworkStatsManager API.
-     * Each bucket carries: app uid, state (foreground / not), byte counts
-     * and wall-clock start/end stamps.
+     * Reads per-app traffic counters kept by Android itself between two timestamps.
+     *
+     * queryDetails() gives bytes per time bucket but merges foreground and background
+     * traffic (every bucket comes back as STATE_ALL), so it is used for totals and the
+     * hour-of-day chart only. The foreground/background split comes from querySummary(),
+     * which keeps Android's per-uid state (foreground vs everything else).
      */
     fun query(startMillis: Long, endMillis: Long): List<AppUsage> {
         val manager = nsm ?: return emptyList()
@@ -46,17 +48,16 @@ class UsageRepository(private val context: Context) {
 
         val byUid = HashMap<Int, AppUsage>()
 
-        for (type in intArrayOf(ConnectivityManager.TYPE_MOBILE, ConnectivityManager.TYPE_WIFI)) {
+        for (type in NETWORK_TYPES) {
             val isMobile = type == ConnectivityManager.TYPE_MOBILE
             var stats: NetworkStats? = null
             try {
-                // subscriberId = null -> all mobile subscribers (allowed on Android 10+)
                 stats = manager.queryDetails(type, null, startMillis, endMillis)
                 val bucket = NetworkStats.Bucket()
                 while (stats.hasNextBucket()) {
                     stats.getNextBucket(bucket)
                     val uid = bucket.uid
-                    if (uid < 0) continue  // removed apps / tethering counters
+                    if (uid < 0) continue
                     val rx = bucket.rxBytes
                     val tx = bucket.txBytes
                     if (rx == 0L && tx == 0L) continue
@@ -74,28 +75,67 @@ class UsageRepository(private val context: Context) {
                         entry.wifiTx += tx
                     }
 
-                    if (bucket.state == NetworkStats.Bucket.STATE_FOREGROUND) {
-                        entry.foregroundBytes += rx + tx
-                    } else {
-                        entry.backgroundBytes += rx + tx
-                    }
-
-                    // "When it uses the data": bucket midpoint -> hour of day
-                    val mid = (bucket.startTimeStamp + bucket.endTimeStamp) / 2
-                    entry.hourBytes[hourOfDay(mid)] += rx + tx
+                    spreadOverHours(entry.hourBytes, rx + tx, bucket.startTimeStamp, bucket.endTimeStamp)
                 }
             } catch (se: SecurityException) {
-                return emptyList()  // usage access revoked mid-query
+                return emptyList()
             } catch (e: Exception) {
-                // e.g. no SIM / no mobile subscriber: skip this network type
             } finally {
                 try { stats?.close() } catch (e: Exception) {}
             }
         }
 
+        addForegroundSplit(manager, byUid, startMillis, endMillis)
+
         return byUid.values
             .filter { it.total > 0L }
             .sortedByDescending { it.total }
+    }
+
+    private fun addForegroundSplit(
+        manager: NetworkStatsManager,
+        byUid: Map<Int, AppUsage>,
+        startMillis: Long,
+        endMillis: Long
+    ) {
+        for (type in NETWORK_TYPES) {
+            var stats: NetworkStats? = null
+            try {
+                stats = manager.querySummary(type, null, startMillis, endMillis)
+                val bucket = NetworkStats.Bucket()
+                while (stats.hasNextBucket()) {
+                    stats.getNextBucket(bucket)
+                    val entry = byUid[bucket.uid] ?: continue
+                    val bytes = bucket.rxBytes + bucket.txBytes
+                    when (bucket.state) {
+                        NetworkStats.Bucket.STATE_FOREGROUND -> {
+                            entry.foregroundBytes += bytes
+                            entry.splitKnown = true
+                        }
+                        NetworkStats.Bucket.STATE_DEFAULT -> {
+                            entry.backgroundBytes += bytes
+                            entry.splitKnown = true
+                        }
+                        else -> {}
+                    }
+                }
+            } catch (e: Exception) {
+            } finally {
+                try { stats?.close() } catch (e: Exception) {}
+            }
+        }
+    }
+
+    private fun spreadOverHours(hours: LongArray, bytes: Long, startMs: Long, endMs: Long) {
+        val span = (endMs - startMs).coerceAtLeast(1L)
+        val count = ((span + HOUR_MS - 1L) / HOUR_MS).toInt().coerceIn(1, 24)
+        val first = hourOfDay(startMs)
+        val share = bytes / count
+        val rest = bytes - share * count
+        for (k in 0 until count) {
+            hours[(first + k) % 24] += share
+        }
+        hours[first] += rest
     }
 
     /** Cumulative mobile bytes for a plan cycle, or null if NetworkStats is unavailable. */
@@ -162,5 +202,10 @@ class UsageRepository(private val context: Context) {
         } catch (e: Exception) {
             pkg
         }
+    }
+
+    private companion object {
+        const val HOUR_MS = 3_600_000L
+        val NETWORK_TYPES = intArrayOf(ConnectivityManager.TYPE_MOBILE, ConnectivityManager.TYPE_WIFI)
     }
 }

@@ -65,11 +65,15 @@ class AppsFragment : Fragment(R.layout.fragment_apps) {
         val pad = (20 * d).toInt()
 
         val summary = TextView(ctx).apply {
-            text = "Mobile ${FormatBytes.human(app.mobileTotal)} · " +
-                "Wi-Fi ${FormatBytes.human(app.wifiTotal)}\n" +
-                "Foreground ${FormatBytes.human(app.foregroundBytes)} · " +
-                "Background ${FormatBytes.human(app.backgroundBytes)} " +
-                "(${app.backgroundPercent}%)"
+            val split = if (app.backgroundPercent >= 0) {
+                "Foreground ${FormatBytes.human(app.foregroundBytes)} (${app.foregroundPercent}%) · " +
+                    "Background ${FormatBytes.human(app.backgroundBytes)} (${app.backgroundPercent}%)"
+            } else {
+                "Foreground/background split is not available on this phone"
+            }
+            text = "Total ${FormatBytes.human(app.total)}\n" +
+                "Mobile ${FormatBytes.human(app.mobileTotal)} · " +
+                "Wi-Fi ${FormatBytes.human(app.wifiTotal)}\n" + split
         }
         val chartTitle = TextView(ctx).apply {
             text = "Data by hour of day"

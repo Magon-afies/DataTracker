@@ -1,7 +1,7 @@
-# Data Tracker & Media Organizer — v2
+# Data Tracker — v2
 
 Native Android app (Kotlin). Per-app data usage + history + alerts + charts,
-and an on-device photo/PDF organizer. Builds an APK on GitHub Actions; you drive
+plus an automatic app-cache cleaner. Builds an APK on GitHub Actions; you drive
 everything from Termux.
 
 ## Termux quick start
@@ -29,16 +29,9 @@ Switching to your own key later means uninstalling once (signatures differ).
 - Alerts tab: daily cap per app and background-data threshold, notifications
 - Charts: daily stacked bars (mobile/Wi-Fi), per-app hourly bars
 - Per-app buttons: "Restrict data" and "App info" open Android's own settings
-- Photos: resumable background scan, cached hashes/OCR (no rescans), progress bar,
-  all photos (no 300/1000 caps), identical vs similar groups, one-tap "move extras to trash"
-- PDFs: pick PDFs, first page is OCR'd and categorized
-- Android 14 "selected photos only" handled
-- Categories: invoices, receipts/transfers, bank statements, ID, QR, screenshots, documents
 
 ## Not included
 - Which servers an app contacts (needs a VpnService build, like NetGuard)
-- Meme detection (no reliable offline signal)
-- Multi-page PDF OCR (page 1 only)
 
 ## Data-plan threshold notifications
 

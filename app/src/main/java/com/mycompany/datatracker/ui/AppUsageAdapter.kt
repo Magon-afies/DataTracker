@@ -45,8 +45,12 @@ class AppUsageAdapter(
         holder.detail.text = "Mobile ${FormatBytes.human(app.mobileTotal)} · " +
             "Wi-Fi ${FormatBytes.human(app.wifiTotal)}"
         holder.detail2.text = buildString {
-            append("Background ${app.backgroundPercent}%")
-            app.peakHour().takeIf { it.isNotEmpty() }?.let { append(" · busiest around $it") }
+            if (app.backgroundPercent >= 0) {
+                append("Foreground ${app.foregroundPercent}% · Background ${app.backgroundPercent}%")
+            } else {
+                append("Foreground/background split not available")
+            }
+            app.peakWindow().takeIf { it.isNotEmpty() }?.let { append(" · busiest $it") }
         }
 
         val pkg = app.packageName
