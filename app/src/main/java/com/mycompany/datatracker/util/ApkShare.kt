@@ -1,10 +1,10 @@
-package com.mycompany.datatracker.util
+package com.crestpoint.datatracker.util
 
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
-import com.mycompany.datatracker.R
+import com.crestpoint.datatracker.R
 import java.io.File
 
 object ApkShare {

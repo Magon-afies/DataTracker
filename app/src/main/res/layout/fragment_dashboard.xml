@@ -45,7 +45,7 @@
             android:text="@string/open_notification_settings"
             android:visibility="gone" />
 
-        <com.mycompany.datatracker.ui.SetupChecklistCard
+        <com.crestpoint.datatracker.ui.SetupChecklistCard
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp" />
@@ -98,7 +98,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <com.mycompany.datatracker.clock.DeathClockView
+        <com.crestpoint.datatracker.clock.DeathClockView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp" />
@@ -138,7 +138,7 @@
             android:text="@string/chart_header"
             android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-        <com.mycompany.datatracker.ui.BarChartView
+        <com.crestpoint.datatracker.ui.BarChartView
             android:id="@+id/history_chart"
             android:layout_width="match_parent"
             android:layout_height="180dp"
@@ -158,7 +158,7 @@
             android:nestedScrollingEnabled="false" />
 
 
-        <com.mycompany.datatracker.ui.ShareCard
+        <com.crestpoint.datatracker.ui.ShareCard
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"

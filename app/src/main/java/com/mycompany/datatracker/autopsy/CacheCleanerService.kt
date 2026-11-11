@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.autopsy
+package com.crestpoint.datatracker.autopsy
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
@@ -7,9 +7,9 @@ import android.os.Looper
 import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import com.mycompany.datatracker.cleaner.BotScreen
-import com.mycompany.datatracker.cleaner.CacheBot
-import com.mycompany.datatracker.cleaner.ClearResult
+import com.crestpoint.datatracker.cleaner.BotScreen
+import com.crestpoint.datatracker.cleaner.CacheBot
+import com.crestpoint.datatracker.cleaner.ClearResult
 import java.util.Locale
 
 class CacheCleanerService : AccessibilityService() {

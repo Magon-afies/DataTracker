@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.mycompany.datatracker"
+    namespace = "com.crestpoint.datatracker"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.mycompany.datatracker"
+        applicationId = "com.crestpoint.datatracker"
         minSdk = 29
         targetSdk = 35
         versionCode = 20

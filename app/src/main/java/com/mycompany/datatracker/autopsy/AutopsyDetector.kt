@@ -1,7 +1,7 @@
-package com.mycompany.datatracker.autopsy
+package com.crestpoint.datatracker.autopsy
 
-import com.mycompany.datatracker.usage.UsageRepository
-import com.mycompany.datatracker.util.Dates
+import com.crestpoint.datatracker.usage.UsageRepository
+import com.crestpoint.datatracker.util.Dates
 
 data class Snap(val total: Long, val bg: Long, val mobile: Long, val wifi: Long)
 

@@ -1,8 +1,21 @@
-# Data Tracker — v2
+# Data Tracker - by CrestPoint
 
-Native Android app (Kotlin). Per-app data usage + history + alerts + charts,
-plus an automatic app-cache cleaner. Builds an APK on GitHub Actions; you drive
-everything from Termux.
+Native Android app (Kotlin). Per-app data usage, local history, alerts, charts,
+storage health, cache-cleaner helpers and app-health controls. The Android
+application id is `com.crestpoint.datatracker`.
+
+## Build an APK
+
+This environment uses Gradle directly (there is no Flutter SDK installed):
+
+```bash
+gradle assembleRelease --no-daemon
+```
+
+The APK is written to `app/build/outputs/apk/release/app-release.apk`.
+
+If you add Flutter later, the equivalent Flutter command requested for a Flutter
+project would be `flutter build apk --release`; this is a native Kotlin project.
 
 ## Termux quick start
 

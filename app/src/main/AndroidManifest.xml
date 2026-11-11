@@ -17,6 +17,13 @@
 
     <!-- Android 13+: data-cap alerts -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- File Explorer uses Android's storage access screen first, then this
+         special access only when the owner explicitly enables full browsing. -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />

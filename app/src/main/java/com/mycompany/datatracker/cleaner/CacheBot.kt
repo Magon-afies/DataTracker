@@ -1,8 +1,8 @@
-package com.mycompany.datatracker.cleaner
+package com.crestpoint.datatracker.cleaner
 
 import android.content.Context
 import android.os.SystemClock
-import com.mycompany.datatracker.usage.CacheStats
+import com.crestpoint.datatracker.usage.CacheStats
 
 data class CacheTarget(val packageName: String, val cacheBytes: Long)
 

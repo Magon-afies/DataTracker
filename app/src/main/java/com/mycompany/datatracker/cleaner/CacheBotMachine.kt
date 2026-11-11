@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.cleaner
+package com.crestpoint.datatracker.cleaner
 
 enum class ClearResult { NOT_FOUND, DISABLED, CLICKED }
 

@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.ui
+package com.crestpoint.datatracker.ui
 
 import android.app.AlertDialog
 import android.content.Context
@@ -6,8 +6,8 @@ import android.graphics.Color
 import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.mycompany.datatracker.usage.AppUsage
-import com.mycompany.datatracker.util.FormatBytes
+import com.crestpoint.datatracker.usage.AppUsage
+import com.crestpoint.datatracker.util.FormatBytes
 import java.util.Locale
 
 class AppTimelineDialog {

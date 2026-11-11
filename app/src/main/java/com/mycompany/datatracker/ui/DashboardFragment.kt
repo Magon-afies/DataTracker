@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.ui
+package com.crestpoint.datatracker.ui
 
 import android.content.Intent
 import android.os.Bundle
@@ -11,15 +11,15 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.mycompany.datatracker.R
-import com.mycompany.datatracker.data.HistoryStore
-import com.mycompany.datatracker.data.Naira
-import com.mycompany.datatracker.data.Prefs
-import com.mycompany.datatracker.usage.UsageRepository
-import com.mycompany.datatracker.util.Dates
-import com.mycompany.datatracker.util.FormatBytes
-import com.mycompany.datatracker.work.Alerts
-import com.mycompany.datatracker.work.PlanMonitor
+import com.crestpoint.datatracker.R
+import com.crestpoint.datatracker.data.HistoryStore
+import com.crestpoint.datatracker.data.Naira
+import com.crestpoint.datatracker.data.Prefs
+import com.crestpoint.datatracker.usage.UsageRepository
+import com.crestpoint.datatracker.util.Dates
+import com.crestpoint.datatracker.util.FormatBytes
+import com.crestpoint.datatracker.work.Alerts
+import com.crestpoint.datatracker.work.PlanMonitor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

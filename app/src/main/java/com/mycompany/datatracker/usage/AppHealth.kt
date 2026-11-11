@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.usage
+package com.crestpoint.datatracker.usage
 
 data class AppHealth(
     val uid: Int,

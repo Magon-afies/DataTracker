@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.work
+package com.crestpoint.datatracker.work
 
 import android.content.Context
 import androidx.work.CoroutineWorker
@@ -6,9 +6,9 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.mycompany.datatracker.data.HistoryStore
-import com.mycompany.datatracker.usage.UsageRepository
-import com.mycompany.datatracker.util.Dates
+import com.crestpoint.datatracker.data.HistoryStore
+import com.crestpoint.datatracker.usage.UsageRepository
+import com.crestpoint.datatracker.util.Dates
 import java.util.concurrent.TimeUnit
 
 /** Runs about every 30 min: saves today's snapshot to history and checks alert limits. */

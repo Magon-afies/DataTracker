@@ -1,11 +1,11 @@
-package com.mycompany.datatracker.data
+package com.crestpoint.datatracker.data
 
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
-import com.mycompany.datatracker.usage.AppUsage
-import com.mycompany.datatracker.usage.UsageRepository
-import com.mycompany.datatracker.util.Dates
+import com.crestpoint.datatracker.usage.AppUsage
+import com.crestpoint.datatracker.usage.UsageRepository
+import com.crestpoint.datatracker.util.Dates
 
 data class DayTotal(val day: String, val mobile: Long, val wifi: Long)
 

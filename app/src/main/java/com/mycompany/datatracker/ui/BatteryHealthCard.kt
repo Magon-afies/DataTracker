@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.ui
+package com.crestpoint.datatracker.ui
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -13,7 +13,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.card.MaterialCardView
-import com.mycompany.datatracker.R
+import com.crestpoint.datatracker.R
 import java.util.Locale
 
 class BatteryHealthCard(context: Context, attrs: AttributeSet? = null) :

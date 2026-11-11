@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.ui
+package com.crestpoint.datatracker.ui
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,9 +6,9 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.mycompany.datatracker.R
-import com.mycompany.datatracker.usage.AppHealth
-import com.mycompany.datatracker.util.FormatBytes
+import com.crestpoint.datatracker.R
+import com.crestpoint.datatracker.usage.AppHealth
+import com.crestpoint.datatracker.util.FormatBytes
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

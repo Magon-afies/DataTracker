@@ -1,4 +1,4 @@
-package com.mycompany.datatracker
+package com.crestpoint.datatracker
 
 import android.Manifest
 import android.os.Build
@@ -13,14 +13,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.mycompany.datatracker.ui.AppsFragment
-import com.mycompany.datatracker.ui.DashboardFragment
-import com.mycompany.datatracker.ui.HealthFragment
-import com.mycompany.datatracker.ui.SettingsFragment
-import com.mycompany.datatracker.work.Alerts
-import com.mycompany.datatracker.work.SnapshotWorker
-import com.mycompany.datatracker.data.Prefs
-import com.mycompany.datatracker.autopsy.AutopsyService
+import com.crestpoint.datatracker.ui.AppsFragment
+import com.crestpoint.datatracker.ui.DashboardFragment
+import com.crestpoint.datatracker.ui.HealthFragment
+import com.crestpoint.datatracker.ui.SettingsFragment
+import com.crestpoint.datatracker.work.Alerts
+import com.crestpoint.datatracker.work.SnapshotWorker
+import com.crestpoint.datatracker.data.Prefs
+import com.crestpoint.datatracker.autopsy.AutopsyService
 
 class MainActivity : AppCompatActivity() {
 

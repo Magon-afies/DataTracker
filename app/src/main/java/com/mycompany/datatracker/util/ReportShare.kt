@@ -1,11 +1,11 @@
-package com.mycompany.datatracker.util
+package com.crestpoint.datatracker.util
 
 import android.content.Context
-import com.mycompany.datatracker.R
-import com.mycompany.datatracker.data.Naira
-import com.mycompany.datatracker.data.PlanStore
-import com.mycompany.datatracker.usage.AppUsage
-import com.mycompany.datatracker.usage.UsageRepository
+import com.crestpoint.datatracker.R
+import com.crestpoint.datatracker.data.Naira
+import com.crestpoint.datatracker.data.PlanStore
+import com.crestpoint.datatracker.usage.AppUsage
+import com.crestpoint.datatracker.usage.UsageRepository
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

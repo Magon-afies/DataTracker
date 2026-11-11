@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.work
+package com.crestpoint.datatracker.work
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -12,11 +12,11 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import com.mycompany.datatracker.MainActivity
-import com.mycompany.datatracker.data.Prefs
-import com.mycompany.datatracker.usage.AppUsage
-import com.mycompany.datatracker.util.Dates
-import com.mycompany.datatracker.util.FormatBytes
+import com.crestpoint.datatracker.MainActivity
+import com.crestpoint.datatracker.data.Prefs
+import com.crestpoint.datatracker.usage.AppUsage
+import com.crestpoint.datatracker.util.Dates
+import com.crestpoint.datatracker.util.FormatBytes
 
 object Alerts {
     private const val CHANNEL = "data_alerts"
@@ -85,7 +85,7 @@ object Alerts {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val n = NotificationCompat.Builder(context, CHANNEL)
-            .setSmallIcon(com.mycompany.datatracker.R.drawable.ic_stat_datatracker)
+            .setSmallIcon(com.crestpoint.datatracker.R.drawable.ic_stat_datatracker)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
@@ -112,12 +112,12 @@ object Alerts {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val n = NotificationCompat.Builder(context, channel)
-            .setSmallIcon(com.mycompany.datatracker.R.drawable.ic_stat_datatracker)
+            .setSmallIcon(com.crestpoint.datatracker.R.drawable.ic_stat_datatracker)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setContentIntent(openApp)
-            .addAction(com.mycompany.datatracker.R.drawable.ic_stat_datatracker, "Top up now", topUp)
+            .addAction(com.crestpoint.datatracker.R.drawable.ic_stat_datatracker, "Top up now", topUp)
             .setAutoCancel(true)
             .build()
         NotificationManagerCompat.from(context).notify(id, n)

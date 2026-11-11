@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.clock
+package com.crestpoint.datatracker.clock
 
 import android.content.Context
 import android.graphics.Typeface
@@ -8,10 +8,10 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.card.MaterialCardView
-import com.mycompany.datatracker.R
-import com.mycompany.datatracker.data.Naira
-import com.mycompany.datatracker.data.PlanStore
-import com.mycompany.datatracker.util.FormatBytes
+import com.crestpoint.datatracker.R
+import com.crestpoint.datatracker.data.Naira
+import com.crestpoint.datatracker.data.PlanStore
+import com.crestpoint.datatracker.util.FormatBytes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

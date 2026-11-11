@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:padding="12dp">
 
-    <com.mycompany.datatracker.ui.BatteryHealthCard
+    <com.crestpoint.datatracker.ui.BatteryHealthCard
         android:id="@+id/battery_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

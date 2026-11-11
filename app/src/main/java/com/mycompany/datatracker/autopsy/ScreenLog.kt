@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.autopsy
+package com.crestpoint.datatracker.autopsy
 
 class ScreenLog(initialOn: Boolean, now: Long) {
     private val events = ArrayDeque<Pair<Long, Boolean>>()

@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.usage
+package com.crestpoint.datatracker.usage
 
 import android.app.usage.UsageStatsManager
 import android.content.Context

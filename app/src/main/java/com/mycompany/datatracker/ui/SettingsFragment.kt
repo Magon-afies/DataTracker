@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.ui
+package com.crestpoint.datatracker.ui
 
 import android.Manifest
 import android.os.Build
@@ -19,13 +19,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.mycompany.datatracker.R
-import com.mycompany.datatracker.data.Prefs
-import com.mycompany.datatracker.data.PlanStore
-import com.mycompany.datatracker.util.FormatBytes
-import com.mycompany.datatracker.util.PhoneStorage
-import com.mycompany.datatracker.work.Alerts
-import com.mycompany.datatracker.work.SnapshotWorker
+import com.crestpoint.datatracker.R
+import com.crestpoint.datatracker.data.Prefs
+import com.crestpoint.datatracker.data.PlanStore
+import com.crestpoint.datatracker.util.FormatBytes
+import com.crestpoint.datatracker.util.PhoneStorage
+import com.crestpoint.datatracker.work.Alerts
+import com.crestpoint.datatracker.work.SnapshotWorker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

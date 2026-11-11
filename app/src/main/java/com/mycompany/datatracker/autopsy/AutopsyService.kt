@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.autopsy
+package com.crestpoint.datatracker.autopsy
 
 import android.app.Service
 import android.content.BroadcastReceiver
@@ -11,8 +11,8 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.os.Process
 import androidx.core.content.ContextCompat
-import com.mycompany.datatracker.data.Prefs
-import com.mycompany.datatracker.usage.UsageRepository
+import com.crestpoint.datatracker.data.Prefs
+import com.crestpoint.datatracker.usage.UsageRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

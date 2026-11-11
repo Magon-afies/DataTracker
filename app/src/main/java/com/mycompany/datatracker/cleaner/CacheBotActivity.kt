@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.cleaner
+package com.crestpoint.datatracker.cleaner
 
 import android.content.Context
 import android.content.Intent
@@ -18,9 +18,9 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.mycompany.datatracker.R
-import com.mycompany.datatracker.autopsy.CacheCleanerService
-import com.mycompany.datatracker.util.FormatBytes
+import com.crestpoint.datatracker.R
+import com.crestpoint.datatracker.autopsy.CacheCleanerService
+import com.crestpoint.datatracker.util.FormatBytes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.ui
+package com.crestpoint.datatracker.ui
 
 import android.content.Intent
 import android.net.Uri
@@ -14,10 +14,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.mycompany.datatracker.R
-import com.mycompany.datatracker.usage.AppUsage
-import com.mycompany.datatracker.usage.UsageRepository
-import com.mycompany.datatracker.util.FormatBytes
+import com.crestpoint.datatracker.R
+import com.crestpoint.datatracker.usage.AppUsage
+import com.crestpoint.datatracker.usage.UsageRepository
+import com.crestpoint.datatracker.util.FormatBytes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

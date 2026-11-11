@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.ui
+package com.crestpoint.datatracker.ui
 
 import android.app.ActivityManager
 import android.content.Intent
@@ -14,11 +14,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.mycompany.datatracker.R
-import com.mycompany.datatracker.autopsy.CacheCleanerService
-import com.mycompany.datatracker.cleaner.CacheBot
-import com.mycompany.datatracker.cleaner.CacheBotActivity
-import com.mycompany.datatracker.usage.AppHealthRepository
+import com.crestpoint.datatracker.R
+import com.crestpoint.datatracker.autopsy.CacheCleanerService
+import com.crestpoint.datatracker.cleaner.CacheBot
+import com.crestpoint.datatracker.cleaner.CacheBotActivity
+import com.crestpoint.datatracker.usage.AppHealthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

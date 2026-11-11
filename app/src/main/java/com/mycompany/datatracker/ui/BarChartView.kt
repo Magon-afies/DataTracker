@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.ui
+package com.crestpoint.datatracker.ui
 
 import android.content.Context
 import android.graphics.Canvas
@@ -6,7 +6,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
-import com.mycompany.datatracker.util.FormatBytes
+import com.crestpoint.datatracker.util.FormatBytes
 
 /** Tiny stacked bar chart: series A (bottom, e.g. mobile) + series B (top, e.g. Wi-Fi). */
 class BarChartView @JvmOverloads constructor(

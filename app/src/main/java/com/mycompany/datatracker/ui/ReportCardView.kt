@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.ui
+package com.crestpoint.datatracker.ui
 
 import android.content.Context
 import android.graphics.Color
@@ -9,10 +9,10 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.google.android.material.card.MaterialCardView
-import com.mycompany.datatracker.R
-import com.mycompany.datatracker.data.PlanStore
-import com.mycompany.datatracker.usage.UsageRepository
-import com.mycompany.datatracker.util.FormatBytes
+import com.crestpoint.datatracker.R
+import com.crestpoint.datatracker.data.PlanStore
+import com.crestpoint.datatracker.usage.UsageRepository
+import com.crestpoint.datatracker.util.FormatBytes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

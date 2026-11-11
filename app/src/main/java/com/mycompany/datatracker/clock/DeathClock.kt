@@ -1,10 +1,10 @@
-package com.mycompany.datatracker.clock
+package com.crestpoint.datatracker.clock
 
 import android.content.Context
-import com.mycompany.datatracker.data.Db
-import com.mycompany.datatracker.data.PlanSnapshot
-import com.mycompany.datatracker.data.PlanStore
-import com.mycompany.datatracker.usage.UsageRepository
+import com.crestpoint.datatracker.data.Db
+import com.crestpoint.datatracker.data.PlanSnapshot
+import com.crestpoint.datatracker.data.PlanStore
+import com.crestpoint.datatracker.usage.UsageRepository
 
 data class DeathClockState(
     val kind: Kind,

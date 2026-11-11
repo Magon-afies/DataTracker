@@ -1,4 +1,4 @@
-package com.mycompany.datatracker.autopsy
+package com.crestpoint.datatracker.autopsy
 
 import android.annotation.SuppressLint
 import android.app.Notification
@@ -10,11 +10,11 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.mycompany.datatracker.MainActivity
-import com.mycompany.datatracker.R
-import com.mycompany.datatracker.data.Naira
-import com.mycompany.datatracker.data.PlanStore
-import com.mycompany.datatracker.work.Alerts
+import com.crestpoint.datatracker.MainActivity
+import com.crestpoint.datatracker.R
+import com.crestpoint.datatracker.data.Naira
+import com.crestpoint.datatracker.data.PlanStore
+import com.crestpoint.datatracker.work.Alerts
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
