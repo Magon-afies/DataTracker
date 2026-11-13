@@ -11,8 +11,8 @@ android {
         applicationId = "com.crestpoint.datatracker"
         minSdk = 29
         targetSdk = 35
-        versionCode = 20
-        versionName = "3.0"
+        versionCode = 21
+        versionName = "4.0"
     }
 
     // Release signing comes from env vars (set by GitHub Actions secrets).
@@ -48,6 +48,12 @@ android {
         jvmTarget = "17"
     }
 
+    packaging {
+        resources {
+            excludes += setOf("META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*", "META-INF/*.kotlin_module")
+        }
+    }
+
     lint {
         abortOnError = false
         checkReleaseBuilds = false
@@ -64,4 +70,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.6")
+    implementation("net.lingala.zip4j:zip4j:2.11.5")
+    implementation("org.apache.commons:commons-compress:1.26.2")
+    implementation("org.tukaani:xz:1.9")
+    implementation("com.github.junrar:junrar:7.5.5")
 }

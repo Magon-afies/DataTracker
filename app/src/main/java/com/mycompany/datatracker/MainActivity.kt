@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.crestpoint.datatracker.files.FilesFragment
 import com.crestpoint.datatracker.ui.AppsFragment
 import com.crestpoint.datatracker.ui.DashboardFragment
 import com.crestpoint.datatracker.ui.HealthFragment
@@ -45,9 +46,15 @@ class MainActivity : AppCompatActivity() {
                     R.id.nav_apps -> swap(AppsFragment())
                     R.id.nav_settings -> swap(SettingsFragment())
                     R.id.nav_health -> swap(HealthFragment())
+                    R.id.nav_files -> swap(FilesFragment())
                 }
                 true
             }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        com.crestpoint.datatracker.databot.DataBot.onAppOpened(this)
     }
 
     private fun swap(fragment: Fragment) {

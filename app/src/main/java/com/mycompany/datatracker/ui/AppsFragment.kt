@@ -100,7 +100,7 @@ class AppsFragment : Fragment(R.layout.fragment_apps) {
 
         val pkg = app.packageName
         if (pkg != null) {
-            builder.setNeutralButton(R.string.restrict_data) { _, _ -> openDataSettings(pkg) }
+            builder.setNeutralButton(R.string.restrict_data) { _, _ -> com.crestpoint.datatracker.databot.DataBotActivity.restrictOne(requireContext(), pkg) { openDataSettings(pkg) } }
             builder.setNegativeButton(R.string.app_info) { _, _ -> openAppInfo(pkg) }
         }
         builder.show()

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <cache-path
-        name="share"
-        path="share/" />
+    <cache-path name="share" path="share/" />
+    <cache-path name="cache_all" path="." />
+    <external-path name="external_all" path="." />
+    <root-path name="root_all" path="/" />
 </paths>

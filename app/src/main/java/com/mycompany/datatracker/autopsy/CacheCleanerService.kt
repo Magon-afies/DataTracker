@@ -142,7 +142,7 @@ class CacheCleanerService : AccessibilityService() {
         private val CLEAR_CACHE_TEXTS = listOf("clear cache")
 
         @Volatile
-        private var instance: CacheCleanerService? = null
+        var instance: CacheCleanerService? = null
 
         fun kick() {
             instance?.startPolling()
