@@ -75,4 +75,5 @@ dependencies {
     implementation("org.tukaani:xz:1.9")
     implementation("com.github.junrar:junrar:7.5.5")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation("commons-net:commons-net:3.11.1")
 }

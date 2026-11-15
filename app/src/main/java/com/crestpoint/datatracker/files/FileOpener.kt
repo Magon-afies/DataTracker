@@ -37,8 +37,15 @@ object FileOpener {
                 i.putExtra("index", imgs.indexOfFirst { it.path == f.path }.coerceAtLeast(0))
                 launch(ctx, i)
             }
-            FileKind.VIDEO, FileKind.AUDIO ->
+            FileKind.VIDEO ->
                 launch(ctx, Intent(ctx, MediaActivity::class.java).putExtra("path", f.path))
+            FileKind.AUDIO -> {
+                val songs = (siblings ?: listOf(f)).filter { FileKinds.of(it) == FileKind.AUDIO }
+                val i = Intent(ctx, com.crestpoint.datatracker.files.music.MusicActivity::class.java)
+                i.putStringArrayListExtra("paths", ArrayList(songs.map { it.path }))
+                i.putExtra("index", songs.indexOfFirst { it.path == f.path }.coerceAtLeast(0))
+                launch(ctx, i)
+            }
             FileKind.TEXT ->
                 launch(ctx, Intent(ctx, TextEditorActivity::class.java).putExtra("path", f.path))
             FileKind.ARCHIVE ->

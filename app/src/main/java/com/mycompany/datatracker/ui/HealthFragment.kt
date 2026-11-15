@@ -45,11 +45,33 @@ class HealthFragment : Fragment() {
 
         view.findViewById<Button>(R.id.health_clean_all).setOnClickListener { cleanAll() }
 
+        load()
+    }
+
+    private var firstResume = true
+
+    private fun load() {
+        val ad = adapter ?: return
+        val app = requireContext().applicationContext
         viewLifecycleOwner.lifecycleScope.launch {
             val items = withContext(Dispatchers.IO) {
                 runCatching { AppHealthRepository(app).snapshot() }.getOrNull() ?: emptyList()
             }
             if (isAdded) ad.submit(items)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (firstResume) { firstResume = false; return }
+        load()
+        // Android refreshes per-app storage stats a moment after a cache is cleared, so look again a few times.
+        viewLifecycleOwner.lifecycleScope.launch {
+            for (d in longArrayOf(1500L, 3000L, 5000L)) {
+                kotlinx.coroutines.delay(d)
+                if (!isAdded) return@launch
+                load()
+            }
         }
     }
 

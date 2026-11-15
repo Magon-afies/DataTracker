@@ -91,12 +91,27 @@ class StorageAnalyzerActivity : AppCompatActivity() {
                 if (other > 0) box.addView(UiKit.text(this@StorageAnalyzerActivity,
                     "Apps & system data (not browsable): ${FormatBytes.human(other)}", 12f, R.color.on_surface_muted))
             }
-            box.addView(UiKit.text(this@StorageAnalyzerActivity, "By type", 16f, bold = true).also { it.setPadding(0, UiKit.dp(this@StorageAnalyzerActivity, 14), 0, 0) })
-            cats.entries.filter { it.key != FileKind.FOLDER }.sortedByDescending { it.value }.forEach { (k, v) ->
-                val c = UiKit.card(this@StorageAnalyzerActivity)
-                c.addView(UiKit.text(this@StorageAnalyzerActivity, "${k.emoji} ${k.label} · ${FormatBytes.human(v)}", 14f))
-                c.addView(UiKit.progress(this@StorageAnalyzerActivity, if (total > 0) v.toFloat() / total else 0f))
-                box.addView(c)
+            val ctx2 = this@StorageAnalyzerActivity
+            val ordered = cats.entries.filter { it.key != FileKind.FOLDER && it.value > 0 }.sortedByDescending { it.value }
+            if (ordered.isNotEmpty()) {
+                val donut = com.crestpoint.datatracker.files.ui.DonutView(ctx2)
+                donut.setData(ordered.map { it.value.toFloat() to com.crestpoint.datatracker.files.ui.Palette.kind(it.key) }, FormatBytes.human(total), "in this folder")
+                val dl = LinearLayout.LayoutParams(UiKit.dp(ctx2, 200), UiKit.dp(ctx2, 200))
+                dl.gravity = android.view.Gravity.CENTER_HORIZONTAL; dl.topMargin = UiKit.dp(ctx2, 12)
+                box.addView(donut, dl)
+            }
+            ordered.forEach { (k, v) ->
+                val row = LinearLayout(ctx2)
+                row.gravity = android.view.Gravity.CENTER_VERTICAL
+                row.setPadding(UiKit.dp(ctx2, 14), UiKit.dp(ctx2, 7), UiKit.dp(ctx2, 14), UiKit.dp(ctx2, 7))
+                row.addView(com.crestpoint.datatracker.files.ui.Design.iconTile(ctx2, k.emoji, com.crestpoint.datatracker.files.ui.Palette.kind(k), 36, 12, 18f))
+                val col = LinearLayout(ctx2)
+                col.orientation = LinearLayout.VERTICAL
+                col.setPadding(UiKit.dp(ctx2, 12), 0, 0, 0)
+                col.addView(UiKit.text(ctx2, k.label, 14f, bold = true))
+                col.addView(UiKit.text(ctx2, FormatBytes.human(v) + "  ·  " + (if (total > 0) (v * 100 / total).toString() else "0") + "%", 12f, R.color.on_surface_muted))
+                row.addView(col)
+                box.addView(row)
             }
             box.addView(UiKit.text(this@StorageAnalyzerActivity, "Biggest items here (tap a folder to drill in)", 16f, bold = true)
                 .also { it.setPadding(0, UiKit.dp(this@StorageAnalyzerActivity, 14), 0, 0) })

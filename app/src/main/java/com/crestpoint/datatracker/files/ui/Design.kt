@@ -174,3 +174,50 @@ class RingView(ctx: Context) : View(ctx) {
         c.drawText(sub, cx, cy + big.textSize * 0.1f + small.textSize * 1.4f, small)
     }
 }
+
+/** Segmented donut chart (used by the storage analyzer). */
+class DonutView(ctx: Context) : View(ctx) {
+    private var parts: List<Pair<Float, Int>> = emptyList()
+    var center = ""
+    var sub = ""
+    private var progress = 0f
+    private val p = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val big = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val small = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    init {
+        p.style = Paint.Style.STROKE
+        big.color = ContextCompat.getColor(ctx, R.color.on_surface); big.textAlign = Paint.Align.CENTER; big.typeface = Typeface.DEFAULT_BOLD
+        small.color = ContextCompat.getColor(ctx, R.color.on_surface_muted); small.textAlign = Paint.Align.CENTER
+    }
+
+    fun setData(data: List<Pair<Float, Int>>, centerText: String, subText: String) {
+        parts = data; center = centerText; sub = subText
+        val a = ValueAnimator.ofFloat(0f, 1f)
+        a.duration = 900
+        a.addUpdateListener { progress = it.animatedValue as Float; invalidate() }
+        a.start()
+    }
+
+    override fun onDraw(c: Canvas) {
+        val s = minOf(width, height).toFloat()
+        val sw = s * 0.16f
+        p.strokeWidth = sw
+        val cx = width / 2f; val cy = height / 2f
+        val r = RectF(cx - s / 2 + sw / 2, cy - s / 2 + sw / 2, cx + s / 2 - sw / 2, cy + s / 2 - sw / 2)
+        val total = parts.sumOf { it.first.toDouble() }.toFloat()
+        if (total > 0f) {
+            var start = -90f
+            val gap = 2f
+            for ((v, col) in parts) {
+                val sweep = (v / total) * 360f * progress
+                p.color = col
+                if (sweep > gap) c.drawArc(r, start, sweep - gap, false, p)
+                start += sweep
+            }
+        }
+        big.textSize = s * 0.17f; small.textSize = s * 0.09f
+        c.drawText(center, cx, cy + big.textSize * 0.1f, big)
+        c.drawText(sub, cx, cy + big.textSize * 0.1f + small.textSize * 1.5f, small)
+    }
+}

@@ -45,6 +45,7 @@ echo "==> Copying files"
 cp -r "$SRC/overlay/app" "$PROJ/"
 echo "==> Patching manifest / gradle / menu"
 python3 "$SRC/patch.py" "$PROJ"
+[ -f "$SRC/featurepack.sh" ] && { mkdir -p "$PROJ/tools"; cp "$SRC/featurepack.sh" "$PROJ/tools/featurepack.sh"; }
 echo "$NEW" > "$PROJ/.featurepack-version"
 [ -n "$TMP" ] && rm -rf "$TMP"
 

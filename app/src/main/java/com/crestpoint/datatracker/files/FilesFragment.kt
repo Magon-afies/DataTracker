@@ -31,6 +31,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.crestpoint.datatracker.R
 import com.crestpoint.datatracker.databot.DataBotActivity
 import com.crestpoint.datatracker.files.share.WifiShareActivity
+import com.crestpoint.datatracker.files.remote.RemoteActivity
+import com.crestpoint.datatracker.files.music.MusicActivity
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.IconCompat
 import com.crestpoint.datatracker.files.tools.AppManagerActivity
 import com.crestpoint.datatracker.files.tools.ScanListActivity
 import com.crestpoint.datatracker.files.tools.StorageAnalyzerActivity
@@ -80,6 +85,10 @@ class FilesFragment : Fragment() {
     private var adapter: FileAdapter? = null
     private var loadJob: Job? = null
     private var lastKey: String? = null
+    private val tabs = arrayListOf<String?>(null)
+    private var tabIndex = 0
+    private lateinit var tabScroll: HorizontalScrollView
+    private lateinit var tabRow: LinearLayout
     private val jobListener: (String) -> Unit = { msg ->
         if (isAdded) { UiKit.toast(requireContext(), msg); refresh() }
     }
@@ -111,6 +120,14 @@ class FilesFragment : Fragment() {
         header.addView(UiKit.iconBtn(ctx, "⊞") { prefs.grid = !prefs.grid; rebuildAdapter(); display() })
         header.addView(UiKit.iconBtn(ctx, "⋮") { moreMenu() })
         col.addView(header)
+
+        tabScroll = HorizontalScrollView(ctx)
+        tabScroll.isHorizontalScrollBarEnabled = false
+        tabRow = LinearLayout(ctx)
+        tabRow.gravity = Gravity.CENTER_VERTICAL
+        tabRow.setPadding(UiKit.dp(ctx, 14), UiKit.dp(ctx, 2), UiKit.dp(ctx, 14), UiKit.dp(ctx, 2))
+        tabScroll.addView(tabRow)
+        col.addView(tabScroll)
 
         crumbScroll = HorizontalScrollView(ctx)
         crumbScroll.isHorizontalScrollBarEnabled = false
@@ -217,7 +234,7 @@ class FilesFragment : Fragment() {
         refresh()
     }
 
-    override fun onStart() { super.onStart(); FileJobs.listeners.add(jobListener) }
+    override fun onStart() { super.onStart(); FileJobs.listeners.add(jobListener); updateShortcuts() }
     override fun onStop() { super.onStop(); FileJobs.listeners.remove(jobListener) }
     override fun onResume() { super.onResume(); refresh() }
     override fun onDestroyView() { loadJob?.cancel(); super.onDestroyView() }
@@ -229,6 +246,66 @@ class FilesFragment : Fragment() {
         } catch (_: Exception) {
             startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
         }
+    }
+
+    // ---------------------------------------------------------------- tabs
+
+    private fun tabLabel(i: Int): String {
+        val p = tabs[i]
+        return "${i + 1} · " + (if (p == null) "Home" else File(p).name.ifEmpty { "Storage" })
+    }
+
+    private fun buildTabs() {
+        val ctx = requireContext()
+        tabRow.removeAllViews()
+        tabScroll.visibility = if (tabs.size > 1 || current != null) View.VISIBLE else View.GONE
+        tabs.indices.forEach { i ->
+            val c = Design.chip(ctx, tabLabel(i), i == tabIndex) { switchTab(i) }
+            if (tabs.size > 1) c.setOnLongClickListener { closeTab(i); true }
+            tabRow.addView(c)
+        }
+        tabRow.addView(Design.chip(ctx, "＋ Tab", false) { addTab() })
+    }
+
+    private fun addTab() {
+        if (tabs.size >= 6) { UiKit.toast(requireContext(), "Up to 6 tabs"); return }
+        tabs.add(current?.path)
+        switchTab(tabs.size - 1)
+        UiKit.toast(requireContext(), "New tab. Long-press a tab to close it.")
+    }
+
+    private fun closeTab(i: Int) {
+        if (tabs.size <= 1) return
+        tabs.removeAt(i)
+        tabIndex = tabIndex.coerceAtMost(tabs.size - 1)
+        val p = tabs[tabIndex]
+        selected.clear()
+        if (p != null) open(File(p)) else showHome()
+    }
+
+    private fun switchTab(i: Int) {
+        if (i == tabIndex || i >= tabs.size) return
+        tabs[tabIndex] = current?.path
+        tabIndex = i
+        selected.clear()
+        val p = tabs[i]
+        if (p != null && File(p).isDirectory) open(File(p)) else showHome()
+    }
+
+    private fun updateShortcuts() {
+        val ctx = requireContext()
+        try {
+            fun sc(id: String, label: String, i: Intent) = ShortcutInfoCompat.Builder(ctx, id)
+                .setShortLabel(label)
+                .setIcon(IconCompat.createWithResource(ctx, R.drawable.ic_stat_datatracker))
+                .setIntent(i.setAction(Intent.ACTION_VIEW)).build()
+            ShortcutManagerCompat.setDynamicShortcuts(ctx, listOf(
+                sc("junk", "Clean junk", Intent(ctx, ScanListActivity::class.java).putExtra("mode", "JUNK")),
+                sc("vault", "Vault", Intent(ctx, VaultActivity::class.java)),
+                sc("share", "Wi-Fi share", Intent(ctx, WifiShareActivity::class.java)),
+                sc("databot", "Background data bot", Intent(ctx, DataBotActivity::class.java))
+            ))
+        } catch (_: Exception) { }
     }
 
     // ---------------------------------------------------------- navigation
@@ -307,6 +384,8 @@ class FilesFragment : Fragment() {
         val key = current?.path ?: virtualTitle
         if (!home && key != lastKey) { list.alpha = 0.2f; list.animate().alpha(1f).setDuration(180).start() }
         lastKey = key
+        if (tabIndex < tabs.size) tabs[tabIndex] = current?.path
+        buildTabs()
         buildCrumbs()
         updateBars()
         backCallback.isEnabled = !home || selected.isNotEmpty() || searchRow.visibility == View.VISIBLE
@@ -434,6 +513,35 @@ class FilesFragment : Fragment() {
         hero.addView(info, UiKit.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         homeBox.addView(hero, hlp)
 
+        val tipBox = LinearLayout(ctx)
+        tipBox.orientation = LinearLayout.VERTICAL
+        homeBox.addView(tipBox)
+        viewLifecycleOwner.lifecycleScope.launch {
+            val dl = File(FilePaths.internalRoot(), "Download")
+            val info = withContext(Dispatchers.IO) {
+                val trash = try { TrashStore.totalSize() } catch (_: Exception) { 0L }
+                val dlSize = if (dl.isDirectory) FileOps.treeSize(dl) else 0L
+                val apks = dl.listFiles()?.count { it.isFile && it.extension.equals("apk", true) } ?: 0
+                Triple(trash, dlSize, apks)
+            }
+            if (!isAdded || tipBox.parent == null) return@launch
+            val tips = ArrayList<Triple<String, String, () -> Unit>>()
+            if (info.first > 20L * 1024 * 1024) tips.add(Triple("🗑️", "Recycle Bin holds ${FormatBytes.human(info.first)} · tap to review", { startActivity(Intent(ctx, TrashActivity::class.java)) }))
+            if (info.third > 0) tips.add(Triple("📱", "${info.third} APK installer(s) in Downloads · tap to review", { ScanListActivity.start(ctx, ScanListActivity.Mode.APKS) }))
+            if (info.second > 500L * 1024 * 1024) tips.add(Triple("⬇️", "Downloads folder is ${FormatBytes.human(info.second)} · tap to open", { open(dl) }))
+            if (tips.isNotEmpty()) {
+                val c = UiKit.card(ctx)
+                c.addView(UiKit.text(ctx, "💡 Smart tips", 14f, bold = true))
+                tips.forEach { (e, t, a) ->
+                    val tv = UiKit.text(ctx, "$e  $t", 13f, R.color.brand_cyan)
+                    tv.setPadding(0, UiKit.dp(ctx, 8), 0, 0)
+                    tv.setOnClickListener { a() }
+                    c.addView(tv)
+                }
+                tipBox.addView(c)
+            }
+        }
+
         rts.drop(1).forEach { (name, dir) ->
             val c = UiKit.card(ctx)
             try {
@@ -500,6 +608,8 @@ class FilesFragment : Fragment() {
             toolCard("📵", "Data bot", "Stop background data", 0xFF26C6DA.toInt()) { startActivity(Intent(ctx, DataBotActivity::class.java)) },
             toolCard("🔐", "Vault", "Locked & encrypted", 0xFF7657F6.toInt()) { startActivity(Intent(ctx, VaultActivity::class.java)) },
             toolCard("📡", "Wi-Fi share", "Use files from your PC", 0xFF4FC3F7.toInt()) { startActivity(Intent(ctx, WifiShareActivity::class.java)) },
+            toolCard("🌐", "Remote (FTP)", "Servers, NAS, hosting", 0xFF4DD0E1.toInt()) { startActivity(Intent(ctx, RemoteActivity::class.java)) },
+            toolCard("🎧", "Music player", "Plays in background", 0xFFF06292.toInt()) { startActivity(Intent(ctx, MusicActivity::class.java)) },
             toolCard("📱", "APK files", "Installers on this phone", 0xFFAED581.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.APKS) },
             toolCard("🗑️", "Recycle Bin", "Restore deleted files", 0xFF90A4AE.toInt()) { startActivity(Intent(ctx, TrashActivity::class.java)) }
         ), 2)
@@ -662,6 +772,16 @@ class FilesFragment : Fragment() {
             SheetAction("☑️", "Select all") { shownList.forEach { selected.add(it.path) }; display() }
         )
         if (files.any { it.isFile }) acts.add(2, SheetAction("🔗", "Open with…") { files.firstOrNull { it.isFile }?.let { FileOpener.external(ctx, it) } })
+        val others = tabs.withIndex().filter { (i, p) -> i != tabIndex && p != null && File(p).isDirectory }
+        others.forEach { (i, p) ->
+            val dest = File(p!!)
+            acts.add(0, SheetAction("📋", "Copy to tab ${i + 1} (${dest.name})") {
+                FileJobs.submit(ctx, FileJob.Copy(files, dest, FileOps.Conflict.KEEP_BOTH, false)); selected.clear(); display()
+            })
+            acts.add(1, SheetAction("✂️", "Move to tab ${i + 1} (${dest.name})") {
+                FileJobs.submit(ctx, FileJob.Copy(files, dest, FileOps.Conflict.KEEP_BOTH, true)); selected.clear(); display()
+            })
+        }
         ActionSheet.show(ctx, "${selected.size} selected", acts)
     }
 

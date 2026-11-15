@@ -130,7 +130,14 @@ class CacheBotActivity : AppCompatActivity() {
             if (machine.finished && !summaryRequested && packages.isNotEmpty()) {
                 summaryRequested = true
                 lifecycleScope.launch {
-                    val after = withContext(Dispatchers.IO) { CacheBot.cacheBytes(applicationContext, packages) }
+                    freedText = "Measuring freed space…"
+                    render()
+                    var after = beforeBytes
+                    for (attempt in 0 until 6) {
+                        after = withContext(Dispatchers.IO) { CacheBot.cacheBytes(applicationContext, packages) }
+                        if (after < beforeBytes) break
+                        kotlinx.coroutines.delay(1500L)
+                    }
                     val freedBytes = (beforeBytes - after).coerceAtLeast(0L)
                     freedText = "Freed about " + FormatBytes.human(freedBytes)
                     render()
