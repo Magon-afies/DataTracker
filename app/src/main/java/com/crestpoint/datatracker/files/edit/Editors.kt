@@ -17,7 +17,7 @@ object Editors {
     fun open(ctx: Context, f: File) {
         if (!canEdit(f)) return
         val cls = when (FileKinds.of(f)) {
-            FileKind.IMAGE -> ImageEditorActivity::class.java
+            FileKind.IMAGE -> SnapEditorActivity::class.java
             FileKind.VIDEO -> VideoEditorActivity::class.java
             else -> MediaEditorActivity::class.java
         }

@@ -22,7 +22,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -33,7 +36,10 @@ import com.crestpoint.datatracker.files.FileKind
 import com.crestpoint.datatracker.files.FileKinds
 import com.crestpoint.datatracker.files.FilesPrefs
 import com.crestpoint.datatracker.files.edit.Editors
+import com.crestpoint.datatracker.files.ui.ActionSheet
 import com.crestpoint.datatracker.files.ui.Glass
+import com.crestpoint.datatracker.files.ui.SheetAction
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.crestpoint.datatracker.files.ui.PathIcon
 import com.crestpoint.datatracker.files.ui.UiKit
 import com.google.android.material.slider.LabelFormatter
@@ -76,6 +82,13 @@ class MediaActivity : AppCompatActivity() {
     private var shown = true
     private var volAcc = -1f
     private var pendingSeek = 0L
+    private var abStage = 0
+    private var abA = 0L
+    private var abB = 0L
+    private var locked = false
+    private lateinit var unlockBtn: ImageView
+    private var sleepRun: Runnable? = null
+    private val hideUnlock = Runnable { unlockBtn.visibility = View.GONE }
     private val h = Handler(Looper.getMainLooper())
     private val hideRun = Runnable { if (player?.isPlaying == true) setControls(false) }
     private val hudHide = Runnable { hud.visibility = View.GONE }
@@ -126,6 +139,7 @@ class MediaActivity : AppCompatActivity() {
             pv.resizeMode = if (zoom) AspectRatioFrameLayout.RESIZE_MODE_ZOOM else AspectRatioFrameLayout.RESIZE_MODE_FIT
             hudText(if (zoom) "Fill screen" else "Fit")
         })
+        top.addView(Glass.iconBtn(this, Glass.MORE) { showMore() })
         topBar = top
         root.addView(top, FrameLayout.LayoutParams(-1, -2, Gravity.TOP))
 
@@ -193,7 +207,13 @@ class MediaActivity : AppCompatActivity() {
         hl.topMargin = UiKit.dp(this, 90)
         root.addView(hud, hl)
 
-        root.setOnTouchListener { _, e -> gd.onTouchEvent(e); true }
+        unlockBtn = Glass.iconBtn(this, Glass.LOCK, 56) { locked = false; unlockBtn.visibility = View.GONE; setControls(true) }
+        unlockBtn.background = Glass.circle(accent)
+        unlockBtn.visibility = View.GONE
+        val ul = FrameLayout.LayoutParams(UiKit.dp(this, 56), UiKit.dp(this, 56), Gravity.CENTER_VERTICAL or Gravity.END)
+        ul.marginEnd = UiKit.dp(this, 20)
+        root.addView(unlockBtn, ul)
+        root.setOnTouchListener { _, e -> if (!locked) gd.onTouchEvent(e) else if (e.action == MotionEvent.ACTION_UP) showUnlock(); true }
         setContentView(root)
 
         val p = ExoPlayer.Builder(this).build()
@@ -249,7 +269,15 @@ class MediaActivity : AppCompatActivity() {
         title.text = f.name
         pendingSeek = prefs.mediaPos(path).toLong()
         slider.value = 0f
-        p.setMediaItem(MediaItem.fromUri(Uri.fromFile(f)))
+        val subs = ArrayList<MediaItem.SubtitleConfiguration>()
+        for (ext in listOf("srt", "vtt")) {
+            val sf = File(f.parentFile, f.nameWithoutExtension + "." + ext)
+            if (sf.isFile) subs.add(MediaItem.SubtitleConfiguration.Builder(Uri.fromFile(sf))
+                .setMimeType(if (ext == "srt") MimeTypes.APPLICATION_SUBRIP else MimeTypes.TEXT_VTT)
+                .setLanguage("en").setSelectionFlags(C.SELECTION_FLAG_DEFAULT).build())
+        }
+        abStage = 0; abA = 0L; abB = 0L
+        p.setMediaItem(MediaItem.Builder().setUri(Uri.fromFile(f)).setSubtitleConfigurations(subs).build())
         p.prepare()
         p.playWhenReady = true
         p.setPlaybackSpeed(speeds[speedIdx])
@@ -296,6 +324,8 @@ class MediaActivity : AppCompatActivity() {
 
     private fun updateProgress() {
         val p = player ?: return
+        if (abStage == 2 && p.currentPosition >= abB) p.seekTo(abA)
+        if (isInPictureInPictureMode && shown) setControls(false)
         if (dragging || p.duration <= 0L) return
         slider.value = (p.currentPosition / 1000f).coerceIn(0f, slider.valueTo)
         tCur.text = fmtTime(p.currentPosition)
@@ -337,9 +367,109 @@ class MediaActivity : AppCompatActivity() {
         hudText("Volume ${(volAcc * 100 / mx).toInt()}%")
     }
 
+    private fun showMore() {
+        val p = player ?: return
+        val loop = p.repeatMode == Player.REPEAT_MODE_ONE
+        val acts = ArrayList<SheetAction>()
+        acts.add(SheetAction("🎶", "Audio track") { pickTracks(C.TRACK_TYPE_AUDIO, "Audio track") })
+        acts.add(SheetAction("💬", "Subtitles") { pickTracks(C.TRACK_TYPE_TEXT, "Subtitles") })
+        acts.add(SheetAction("🔁", if (loop) "Loop: on (tap to turn off)" else "Loop this video") {
+            p.repeatMode = if (loop) Player.REPEAT_MODE_OFF else Player.REPEAT_MODE_ONE
+            hudText(if (loop) "Loop off" else "Loop on")
+        })
+        acts.add(SheetAction("🔄", when (abStage) { 0 -> "A–B repeat: set start"; 1 -> "A–B repeat: set end"; else -> "Clear A–B repeat" }) { abClick() })
+        acts.add(SheetAction("🕘", "Sleep timer") { sleepMenu() })
+        acts.add(SheetAction("🖼", "Picture in picture") { enterPip() })
+        acts.add(SheetAction("🔐", "Lock screen") { locked = true; setControls(false); showUnlock() })
+        acts.add(SheetAction("ℹ", "Info") { showInfo() })
+        ActionSheet.show(this, "Player", acts)
+    }
+
+    private fun pickTracks(type: Int, title: String) {
+        val p = player ?: return
+        val acts = ArrayList<SheetAction>()
+        for (g in p.currentTracks.groups) {
+            if (g.type != type) continue
+            for (i in 0 until g.length) {
+                if (!g.isTrackSupported(i)) continue
+                val f = g.getTrackFormat(i)
+                val name = f.label ?: f.language ?: "Track ${acts.size + 1}"
+                val on = g.isTrackSelected(i)
+                acts.add(SheetAction(if (on) "✓" else "▶", name) {
+                    p.trackSelectionParameters = p.trackSelectionParameters.buildUpon()
+                        .setTrackTypeDisabled(type, false)
+                        .setOverrideForType(TrackSelectionOverride(g.mediaTrackGroup, i)).build()
+                })
+            }
+        }
+        if (type == C.TRACK_TYPE_TEXT) {
+            acts.add(SheetAction("✕", "Subtitles off") {
+                p.trackSelectionParameters = p.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true).build()
+            })
+        }
+        if (acts.isEmpty()) hudText("No $title found") else ActionSheet.show(this, title, acts)
+    }
+
+    private fun abClick() {
+        val p = player ?: return
+        when (abStage) {
+            0 -> { abA = p.currentPosition; abB = 0L; abStage = 1; hudText("A set at " + fmtTime(abA)) }
+            1 -> {
+                if (p.currentPosition > abA + 500L) { abB = p.currentPosition; abStage = 2; hudText("Repeating A–B") }
+                else hudText("Pick a later point")
+            }
+            else -> { abStage = 0; abA = 0L; abB = 0L; hudText("A–B cleared") }
+        }
+    }
+
+    private fun sleepMenu() {
+        val acts = ArrayList<SheetAction>()
+        for (m in listOf(15, 30, 60)) acts.add(SheetAction("🕘", "Stop in $m minutes") { setSleep(m) })
+        acts.add(SheetAction("✕", "Turn off timer") { setSleep(0) })
+        ActionSheet.show(this, "Sleep timer", acts)
+    }
+
+    private fun setSleep(min: Int) {
+        sleepRun?.let { h.removeCallbacks(it) }
+        sleepRun = null
+        if (min > 0) {
+            val r = Runnable { player?.pause(); finish() }
+            sleepRun = r
+            h.postDelayed(r, min * 60_000L)
+            hudText("Sleep in $min min")
+        } else hudText("Sleep timer off")
+    }
+
+    private fun showUnlock() {
+        unlockBtn.visibility = View.VISIBLE
+        h.removeCallbacks(hideUnlock)
+        h.postDelayed(hideUnlock, 2500)
+    }
+
+    private fun enterPip() {
+        setControls(false)
+        try {
+            enterPictureInPictureMode(android.app.PictureInPictureParams.Builder().build())
+        } catch (_: Exception) {
+            UiKit.toast(this, "Picture in picture is not available")
+            setControls(true)
+        }
+    }
+
+    private fun showInfo() {
+        val p = player ?: return
+        val f = File(path)
+        val v = p.videoFormat
+        val a = p.audioFormat
+        val msg = "Name: " + f.name + "\nSize: " + "%.1f".format(f.length() / 1048576.0) + " MB\nLength: " + fmtTime(p.duration) +
+            (if (v != null) "\nVideo: " + v.width + "x" + v.height + "  " + (v.sampleMimeType ?: "") else "") +
+            (if (a != null) "\nAudio: " + (a.sampleMimeType ?: "") + "  " + a.channelCount + " ch  " + a.sampleRate + " Hz" else "")
+        MaterialAlertDialogBuilder(this).setTitle("Info").setMessage(msg).setPositiveButton("OK", null).show()
+    }
+
     override fun onPause() {
         super.onPause()
-        player?.let { if (it.currentPosition > 0) prefs.setMediaPos(path, it.currentPosition.toInt()); it.pause() }
+        player?.let { if (it.currentPosition > 0) prefs.setMediaPos(path, it.currentPosition.toInt()); if (!isInPictureInPictureMode) it.pause() }
     }
 
     override fun onDestroy() {
