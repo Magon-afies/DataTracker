@@ -8,6 +8,7 @@ import android.graphics.drawable.RippleDrawable
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -45,6 +46,33 @@ object UiKit {
 
     fun lp(w: Int, h: Int, weight: Float = 0f): LinearLayout.LayoutParams {
         return LinearLayout.LayoutParams(w, h, weight)
+    }
+}
+
+object Design {
+    fun ripple(v: View, radiusDp: Int = 12) {
+        val ctx = v.context
+        val mask = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = UiKit.dp(ctx, radiusDp).toFloat()
+            setColor(Color.WHITE)
+        }
+        v.background = RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), v.background, mask)
+    }
+
+    fun card(ctx: Context, bgCol: Int = 0xFF141526.toInt(), radiusDp: Int = 16): GradientDrawable {
+        return GradientDrawable().apply {
+            setColor(bgCol)
+            cornerRadius = UiKit.dp(ctx, radiusDp).toFloat()
+            setStroke(UiKit.dp(ctx, 1), 0x22FFFFFF)
+        }
+    }
+
+    fun rounded(ctx: Context, col: Int, radiusDp: Int): GradientDrawable {
+        return GradientDrawable().apply {
+            setColor(col)
+            cornerRadius = UiKit.dp(ctx, radiusDp).toFloat()
+        }
     }
 }
 
@@ -94,4 +122,5 @@ class RingView(ctx: Context) : View(ctx) {
 class DonutView(ctx: Context) : View(ctx) {
     var progress: Float = 0f
         set(value) { field = value; invalidate() }
+    fun setData(vals: FloatArray, colors: IntArray) { invalidate() }
 }

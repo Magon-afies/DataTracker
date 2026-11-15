@@ -9,4 +9,6 @@ object FormatBytes {
         if (mb < 1024) return "%.1f MB".format(mb)
         return "%.2f GB".format(mb / 1024.0)
     }
+
+    fun human(bytes: Long): String = format(bytes)
 }

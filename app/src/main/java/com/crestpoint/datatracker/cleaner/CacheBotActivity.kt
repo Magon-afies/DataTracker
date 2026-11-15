@@ -18,6 +18,7 @@ import com.crestpoint.datatracker.files.ui.Design
 import com.crestpoint.datatracker.files.ui.Glass
 import com.crestpoint.datatracker.files.ui.PathIcon
 import com.crestpoint.datatracker.files.ui.UiKit
+import com.crestpoint.datatracker.util.FormatBytes
 import java.io.File
 
 class CacheBotActivity : AppCompatActivity() {
@@ -136,10 +137,10 @@ class CacheBotActivity : AppCompatActivity() {
                 isScanning = false
                 progressBar.isIndeterminate = false
                 progressBar.progress = 100
-                sizeText.text = formatSize(totalCacheBytes)
+                sizeText.text = FormatBytes.human(totalCacheBytes)
                 statusText.text = if (totalCacheBytes > 0) "Junk files found. Ready to clear." else "System is sparkling clean!"
                 if (items.isEmpty()) addDetailRow("No cache residue found", "0 KB")
-                else items.forEach { addDetailRow(it.first, formatSize(it.second)) }
+                else items.forEach { addDetailRow(it.first, FormatBytes.human(it.second)) }
             }
         }.start()
     }
@@ -166,8 +167,8 @@ class CacheBotActivity : AppCompatActivity() {
                 progressBar.progress = 100
                 cleanButton.alpha = 1f
                 sizeText.text = "0 MB"
-                statusText.text = "Successfully freed " + formatSize(freed) + "!"
-                UiKit.toast(act, "Freed " + formatSize(freed))
+                statusText.text = "Successfully freed " + FormatBytes.human(freed) + "!"
+                UiKit.toast(this, "Freed " + FormatBytes.human(freed))
                 detailsContainer.removeAllViews()
                 addDetailRow("Temporary Cache", "0 KB")
             }
@@ -184,14 +185,5 @@ class CacheBotActivity : AppCompatActivity() {
             addView(UiKit.text(act, sizeStr, 13f, R.color.on_surface_muted))
         }
         detailsContainer.addView(row, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, 0, 0, UiKit.dp(act, 8)) })
-    }
-
-    private fun formatSize(bytes: Long): String {
-        if (bytes < 1024) return "$bytes B"
-        val kb = bytes / 1024.0
-        if (kb < 1024) return "%.1f KB".format(kb)
-        val mb = kb / 1024.0
-        if (mb < 1024) return "%.1f MB".format(mb)
-        return "%.2f GB".format(mb / 1024.0)
     }
 }
