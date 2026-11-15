@@ -42,6 +42,7 @@ import com.crestpoint.datatracker.files.tools.StorageAnalyzerActivity
 import com.crestpoint.datatracker.files.tools.TrashActivity
 import com.crestpoint.datatracker.files.ui.ActionSheet
 import com.crestpoint.datatracker.files.ui.Design
+import com.crestpoint.datatracker.files.ui.Icons
 import com.crestpoint.datatracker.files.ui.Palette
 import com.crestpoint.datatracker.files.ui.RingView
 import com.crestpoint.datatracker.files.ui.SheetAction
@@ -743,7 +744,7 @@ class FilesFragment : Fragment() {
                 c.orientation = LinearLayout.VERTICAL
                 c.gravity = Gravity.CENTER
                 c.setPadding(UiKit.dp(ctx, 10), UiKit.dp(ctx, 4), UiKit.dp(ctx, 10), UiKit.dp(ctx, 4))
-                c.addView(UiKit.text(ctx, emoji, 20f).also { it.gravity = Gravity.CENTER })
+                c.addView(UiKit.text(ctx, emoji, 20f).also { it.gravity = Gravity.CENTER; Icons.set(it, emoji) })
                 c.addView(UiKit.text(ctx, label, 10f, R.color.on_surface_muted).also { it.gravity = Gravity.CENTER })
                 c.setOnClickListener { run() }
                 Design.ripple(c)
@@ -967,7 +968,7 @@ class FilesFragment : Fragment() {
             bg.setColor(if (sel) color else Palette.withAlpha(color, 0x33))
             bg.cornerRadius = UiKit.dp(ctx, if (grid) 20 else 15).toFloat()
             h.tile.background = bg
-            h.emoji.text = if (sel) "✓" else kind.emoji
+            Icons.set(h.emoji, if (sel) "✓" else kind.emoji, if (sel) 0xFFFFFFFF.toInt() else color)
             h.emoji.visibility = View.VISIBLE
             h.thumb.visibility = View.GONE
             h.thumb.setImageDrawable(null)

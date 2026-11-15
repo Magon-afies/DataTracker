@@ -49,6 +49,7 @@ object UiKit {
 
     fun iconBtn(ctx: Context, glyph: String, onClick: (View) -> Unit): TextView {
         val t = text(ctx, glyph, 20f)
+        Icons.set(t, glyph)
         val p = dp(ctx, 10)
         t.setPadding(p, p, p, p)
         t.setOnClickListener { onClick(it) }

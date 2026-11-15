@@ -60,8 +60,8 @@ object Design {
         g.cornerRadius = UiKit.dp(ctx, radiusDp).toFloat()
         f.background = g
         val t = TextView(ctx)
-        t.text = emoji
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, emojiSp)
+        Icons.set(t, emoji, color)
         t.gravity = Gravity.CENTER
         f.addView(t, FrameLayout.LayoutParams(-1, -1))
         f.tag = t
@@ -119,7 +119,7 @@ object ActionSheet {
             val row = LinearLayout(ctx)
             row.gravity = Gravity.CENTER_VERTICAL
             row.setPadding(UiKit.dp(ctx, 10), UiKit.dp(ctx, 13), UiKit.dp(ctx, 10), UiKit.dp(ctx, 13))
-            row.addView(UiKit.text(ctx, a.emoji, 20f).also { it.setPadding(0, 0, UiKit.dp(ctx, 14), 0) })
+            row.addView(UiKit.text(ctx, a.emoji, 20f).also { it.setPadding(0, 0, UiKit.dp(ctx, 14), 0); Icons.set(it, a.emoji, UiKit.color(ctx, if (a.danger) R.color.health_bad else R.color.on_surface)) })
             row.addView(UiKit.text(ctx, a.label, 15f, if (a.danger) R.color.health_bad else R.color.on_surface))
             Design.ripple(row)
             row.setOnClickListener { d.dismiss(); a.run() }

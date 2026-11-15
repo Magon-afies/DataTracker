@@ -213,46 +213,53 @@ class ScanListActivity : AppCompatActivity() {
         return out
     }
 
+    // junk-v2: skips your own media/docs folders and app data, only flags OLD files, selects only the safest.
     private fun scanJunk(root: File, skip: (File) -> Boolean, counter: AtomicInteger, cancelled: () -> Boolean): List<Row> {
-        val empties = ArrayList<File>()
-        val zero = ArrayList<File>()
-        val temp = ArrayList<File>()
-        val thumbs = ArrayList<File>()
-        val lost = ArrayList<File>()
-        val apks = ArrayList<File>()
-        val keepDirs = setOf("DCIM", "Download", "Downloads", "Pictures", "Music", "Movies", "Documents", "Alarms",
-            "Notifications", "Ringtones", "Podcasts", "Recordings", "Audiobooks")
-        val tempExt = setOf("tmp", "temp", "log", "bak", "old", "chk", "dmp")
-        FileWalker.walk(root, { skip(it) }, cancelled,
+        val now = System.currentTimeMillis()
+        val day = 86_400_000L
+        val thumbs = ArrayList<File>(); val temp = ArrayList<File>(); val logs = ArrayList<File>()
+        val zero = ArrayList<File>(); val empties = ArrayList<File>(); val lost = ArrayList<File>(); val apks = ArrayList<File>()
+        val neverScan = setOf("DCIM", "Pictures", "Movies", "Music", "Podcasts", "Alarms", "Notifications",
+            "Ringtones", "Recordings", "Audiobooks", "Documents", "Android", "WhatsApp", "Telegram")
+        val tempExt = setOf("tmp", "temp", "chk", "dmp")
+        val logExt = setOf("log", "bak", "old")
+
+        for (p in listOf("DCIM/.thumbnails", "Pictures/.thumbnails"))
+            File(root, p).listFiles()?.forEach { if (it.isFile) thumbs.add(it) }
+        File(root, "LOST.DIR").listFiles()?.forEach { if (it.isFile && now - it.lastModified() > 30 * day) lost.add(it) }
+
+        val skipJunk: (File) -> Boolean = { f -> skip(f) || f.name.startsWith(".") || (f.parentFile == root && f.name in neverScan) }
+        FileWalker.walk(root, skipJunk, cancelled,
             onDir = { d, kids ->
-                if (kids.isEmpty() && d != root && !(d.parentFile == root && d.name in keepDirs)) empties.add(d)
+                if (kids.isEmpty() && d.parentFile != root && d != root && now - d.lastModified() > 14 * day) empties.add(d)
             }
         ) { f ->
             counter.incrementAndGet()
-            val parent = f.parentFile?.name ?: ""
-            val ext = f.extension.lowercase()
+            val n = f.name.lowercase()
+            val ext = n.substringAfterLast('.', "")
             when {
-                parent == ".thumbnails" || parent == "thumbnails" && f.parentFile?.parentFile?.name == "DCIM" -> thumbs.add(f)
-                parent == "LOST.DIR" -> lost.add(f)
-                f.name == ".nomedia" -> {}
-                f.length() == 0L -> zero.add(f)
-                ext in tempExt || f.name.startsWith("~$") || f.name.endsWith("~") || f.name.equals("Thumbs.db", true) -> temp.add(f)
-                ext == "apk" -> apks.add(f)
+                ext in tempExt || n.startsWith("~$") || n.endsWith("~") || n == "thumbs.db" ->
+                    if (now - f.lastModified() > 7 * day) temp.add(f)
+                ext in logExt -> if (now - f.lastModified() > 30 * day) logs.add(f)
+                ext == "apk" -> if (now - f.lastModified() > 2 * day) apks.add(f)
+                else -> if (f.length() == 0L && now - f.lastModified() > 7 * day) zero.add(f)
             }
         }
         val out = ArrayList<Row>()
         fun section(title: String, files: List<File>, pre: Boolean) {
             if (files.isEmpty()) return
-            val total = files.sumOf { FileOps.treeSize(it) }
+            val sized = files.take(400).map { it to (if (it.isFile) it.length() else 0L) }
+            val total = sized.sumOf { it.second }
             out.add(Row(null, total, "$title · ${files.size} · ${FormatBytes.human(total)}"))
-            files.take(400).forEach { out.add(Row(it, FileOps.treeSize(it), null, 0, pre)) }
+            sized.forEach { out.add(Row(it.first, it.second, null, 0, pre)) }
         }
         section("Thumbnail caches", thumbs, true)
-        section("Temporary & log files", temp, true)
-        section("Empty files (0 bytes)", zero, true)
-        section("Empty folders", empties, true)
-        section("Recovered fragments (LOST.DIR)", lost, true)
-        section("Leftover APK installers (check before deleting)", apks, false)
+        section("Old temporary files (7+ days)", temp, true)
+        section("Old logs & backups (check first)", logs, false)
+        section("Empty files (check first)", zero, false)
+        section("Empty folders (14+ days)", empties, false)
+        section("Recovered fragments (LOST.DIR)", lost, false)
+        section("Leftover APK installers (check first)", apks, false)
         return out
     }
 
