@@ -33,7 +33,7 @@ import java.util.Date
 class AppManagerActivity : AppCompatActivity() {
     data class AppRow(
         val pkg: String, val label: String, val version: String, val installed: Long,
-        val updated: Long, val size: Long, val system: Boolean, val apks: List<File>
+        val updated: Long, val size: Long, val system: Boolean, val apks: List<File>, val data: Long = 0L
     )
 
     private var all: List<AppRow> = emptyList()
@@ -41,7 +41,7 @@ class AppManagerActivity : AppCompatActivity() {
     private val checked = LinkedHashSet<String>()
     private var showSystem = false
     private var sortIdx = 0
-    private val sortNames = listOf("Size", "Name", "Recently installed", "Recently updated")
+    private val sortNames = listOf("Size", "Name", "Recently installed", "Recently updated", "Mobile data (7 days)")
     private lateinit var summary: TextView
     private lateinit var adapter: Adapter
     private val uninstallQueue = ArrayDeque<String>()
@@ -98,6 +98,14 @@ class AppManagerActivity : AppCompatActivity() {
                     } catch (_: Exception) { null }
                 }
             }
+            val usage = withContext(Dispatchers.IO) {
+                try {
+                    val n = System.currentTimeMillis()
+                    com.crestpoint.datatracker.usage.UsageRepository(this@AppManagerActivity)
+                        .query(n - 7L * 86_400_000L, n).associate { (it.packageName ?: "") to it.mobileTotal }
+                } catch (_: Throwable) { emptyMap<String, Long>() }
+            }
+            all = all.map { it.copy(data = usage[it.pkg] ?: 0L) }
             applyFilter()
         }
     }
@@ -108,7 +116,8 @@ class AppManagerActivity : AppCompatActivity() {
             0 -> base.sortedByDescending { it.size }
             1 -> base.sortedBy { it.label.lowercase() }
             2 -> base.sortedByDescending { it.installed }
-            else -> base.sortedByDescending { it.updated }
+            3 -> base.sortedByDescending { it.updated }
+            else -> base.sortedByDescending { it.data }
         }
         checked.retainAll(shown.map { it.pkg }.toSet())
         summary.text = "${shown.size} apps · ${FormatBytes.human(shown.sumOf { it.size })} of APK files"
@@ -176,7 +185,8 @@ class AppManagerActivity : AppCompatActivity() {
             val a = shown[position]
             h.n.text = a.label
             val df = DateFormat.getDateInstance(DateFormat.MEDIUM)
-            h.s.text = "v${a.version} · ${FormatBytes.human(a.size)} · installed ${df.format(Date(a.installed))}\n${a.pkg}"
+            h.s.text = "v${a.version} · ${FormatBytes.human(a.size)} · installed ${df.format(Date(a.installed))}" +
+                (if (a.data > 0) " · 📶 ${FormatBytes.human(a.data)} mobile (7d)" else "") + "\n${a.pkg}"
             try { h.icon.setImageDrawable(packageManager.getApplicationIcon(a.pkg)) } catch (_: Exception) { h.icon.setImageDrawable(null) }
             h.cb.setOnCheckedChangeListener(null)
             h.cb.isChecked = a.pkg in checked

@@ -138,6 +138,9 @@
         <activity android:name=".files.tools.TrashActivity" android:exported="false" />
 
         <activity android:name=".databot.DataBotActivity" android:exported="false" />
+            <activity android:name=".files.vault.VaultActivity" android:exported="false" />
+        <activity android:name=".files.share.WifiShareActivity" android:exported="false" />
+        <service android:name=".files.share.WifiShareService" android:exported="false" android:foregroundServiceType="dataSync" />
     </application>
 
 </manifest>
