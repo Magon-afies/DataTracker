@@ -148,6 +148,8 @@
             <activity android:name=".files.remote.RemoteActivity" android:exported="false" />
         <activity android:name=".files.music.MusicActivity" android:exported="false" android:launchMode="singleTop" />
         <service android:name=".files.music.MusicService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
+        <activity android:name=".files.edit.ImageEditorActivity" android:exported="false" />
+        <activity android:name=".files.edit.MediaEditorActivity" android:exported="false" />
     </application>
 
 </manifest>

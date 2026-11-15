@@ -155,6 +155,7 @@ class ImageViewerActivity : AppCompatActivity() {
         top.addView(UiKit.iconBtn(this, "ℹ️") { details() })
         top.addView(UiKit.iconBtn(this, "🖼") { wallpaper() })
         top.addView(UiKit.iconBtn(this, "▶") { toggleSlideshow() })
+        top.addView(UiKit.iconBtn(this, "✎") { com.crestpoint.datatracker.files.edit.Editors.open(this, File(paths[index])) })
         top.addView(UiKit.iconBtn(this, "✕") { finish() })
         root.addView(top, FrameLayout.LayoutParams(-1, -2, Gravity.TOP))
         setContentView(root)

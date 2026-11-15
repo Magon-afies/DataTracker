@@ -47,6 +47,7 @@ class MediaActivity : AppCompatActivity() {
         speedLabel.setPadding(UiKit.dp(this, 12), UiKit.dp(this, 8), UiKit.dp(this, 12), UiKit.dp(this, 8))
         speedLabel.setOnClickListener { cycleSpeed() }
         top.addView(speedLabel)
+        top.addView(UiKit.iconBtn(this, "✎") { com.crestpoint.datatracker.files.edit.Editors.open(this, f) })
         top.addView(UiKit.iconBtn(this, "✕") { finish() })
         root.addView(top, FrameLayout.LayoutParams(-1, -2, Gravity.TOP))
         setContentView(root)
