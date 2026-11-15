@@ -10,6 +10,23 @@ import com.crestpoint.datatracker.R
 /** Shows a crisp vector icon in place of an old emoji. Unknown keys fall back to plain text. */
 object Icons {
     private val map: Map<String, Int> = mapOf(
+        "▶" to R.drawable.ic_s_play,
+        "⏸" to R.drawable.ic_s_pause,
+        "⏮" to R.drawable.ic_s_prev,
+        "⏭" to R.drawable.ic_s_next,
+        "🔀" to R.drawable.ic_s_shuffle,
+        "🔁" to R.drawable.ic_s_repeat,
+        "←" to R.drawable.ic_s_back,
+        "ℹ" to R.drawable.ic_s_info,
+        "⬇" to R.drawable.ic_s_download,
+        "📥" to R.drawable.ic_s_download,
+        "⬆" to R.drawable.ic_s_upload,
+        "🗑" to R.drawable.ic_s_trash,
+        "✖" to R.drawable.ic_s_close,
+        "➕" to R.drawable.ic_s_plus,
+        "🎬" to R.drawable.ic_s_video,
+        "🎶" to R.drawable.ic_s_audio,
+        "📂" to R.drawable.ic_s_folder,
         "✎" to R.drawable.ic_s_edit,
         "📁" to R.drawable.ic_s_folder,
         "🖼" to R.drawable.ic_s_image,

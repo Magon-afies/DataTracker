@@ -134,7 +134,7 @@
         </activity>
         <activity android:name=".files.viewers.TextEditorActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".files.viewers.ImageViewerActivity" android:exported="false" />
-        <activity android:name=".files.viewers.MediaActivity" android:exported="false" />
+        <activity android:name=".files.viewers.MediaActivity" android:exported="false" android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden" />
         <activity android:name=".files.viewers.PdfViewerActivity" android:exported="false" />
         <activity android:name=".files.tools.ScanListActivity" android:exported="false" />
         <activity android:name=".files.tools.StorageAnalyzerActivity" android:exported="false" />
@@ -169,6 +169,7 @@
                 <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
+        <activity android:name=".files.edit.VideoEditorActivity" android:exported="false" android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden" />
     </application>
 
 </manifest>

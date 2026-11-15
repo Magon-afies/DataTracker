@@ -31,6 +31,7 @@ object UiKit {
         t.text = s
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
         t.setTextColor(color(ctx, colorRes))
+        if (s is String && Icons.has(s)) Icons.set(t, s)
         if (bold) t.setTypeface(t.typeface, Typeface.BOLD)
         return t
     }

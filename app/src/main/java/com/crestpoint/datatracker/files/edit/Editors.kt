@@ -16,7 +16,11 @@ object Editors {
 
     fun open(ctx: Context, f: File) {
         if (!canEdit(f)) return
-        val cls = if (FileKinds.of(f) == FileKind.IMAGE) ImageEditorActivity::class.java else MediaEditorActivity::class.java
+        val cls = when (FileKinds.of(f)) {
+            FileKind.IMAGE -> ImageEditorActivity::class.java
+            FileKind.VIDEO -> VideoEditorActivity::class.java
+            else -> MediaEditorActivity::class.java
+        }
         val i = Intent(ctx, cls).putExtra("path", f.path)
         if (ctx !is Activity) i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         ctx.startActivity(i)
