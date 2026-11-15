@@ -49,6 +49,7 @@ import androidx.media3.effect.RgbFilter
 import androidx.media3.effect.ScaleAndRotateTransformation
 import androidx.media3.effect.TextOverlay
 import androidx.media3.effect.TextureOverlay
+import com.google.common.collect.ImmutableList
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
@@ -342,7 +343,7 @@ class VideoEditorActivity : AppCompatActivity() {
             sp.setSpan(BackgroundColorSpan(0x66000000), 0, sp.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             val y = when (textPos) { 0 -> 0.8f; 1 -> 0f; else -> -0.8f }
             val st = OverlaySettings.Builder().setBackgroundFrameAnchor(0f, y).build()
-            fx.add(OverlayEffect(listOf<TextureOverlay>(TextOverlay.createStaticTextOverlay(sp, st))))
+            fx.add(OverlayEffect(ImmutableList.of<TextureOverlay>(TextOverlay.createStaticTextOverlay(sp, st))))
         }
         return fx
     }
