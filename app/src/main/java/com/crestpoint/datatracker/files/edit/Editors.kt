@@ -24,7 +24,9 @@ object Editors {
 
     /** name_edited.ext, name_edited2.ext ... next to the original. Never overwrites. */
     fun outFile(src: File, ext: String): File {
-        val dir = src.parentFile ?: src.absoluteFile.parentFile
+        val dir = if (src.path.contains("/open_with/"))
+            File(android.os.Environment.getExternalStorageDirectory(), "Download").also { it.mkdirs() }
+        else (src.parentFile ?: src.absoluteFile.parentFile)
         var n = File(dir, "${src.nameWithoutExtension}_edited.$ext")
         var i = 2
         while (n.exists()) { n = File(dir, "${src.nameWithoutExtension}_edited$i.$ext"); i++ }

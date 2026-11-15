@@ -191,6 +191,12 @@ class ImageEditorActivity : AppCompatActivity() {
     private var con = 100
     private var sat = 100
     private var shp = 0
+    private var filterIdx = 0
+    private var vig = 0
+    private var sizePct = 100
+    private var quality = 95
+    private lateinit var filterRow: LinearLayout
+    private val filterNames = listOf("None", "B&W", "Sepia", "Vivid", "Cool", "Warm", "Fade", "Invert")
     private val aspects = listOf("Free" to 0f, "1:1" to 1f, "4:3" to 4f / 3f, "3:4" to 3f / 4f, "16:9" to 16f / 9f, "9:16" to 9f / 16f)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -228,11 +234,19 @@ class ImageEditorActivity : AppCompatActivity() {
         buildAspects()
         tools.addView(Design.chip(this, "⟳ Rotate", false) { transform(Matrix().apply { postRotate(90f) }) })
         tools.addView(Design.chip(this, "⇋ Flip", false) { transform(Matrix().apply { postScale(-1f, 1f) }) })
+        tools.addView(Design.chip(this, "⇵ Flip V", false) { transform(Matrix().apply { postScale(1f, -1f) }) })
         tools.addView(aspectRow)
         val hs = HorizontalScrollView(this)
         hs.isHorizontalScrollBarEnabled = false
         hs.addView(tools)
         root.addView(hs)
+
+        filterRow = LinearLayout(this)
+        buildFilters()
+        val fhs = HorizontalScrollView(this)
+        fhs.isHorizontalScrollBarEnabled = false
+        fhs.addView(filterRow)
+        root.addView(fhs)
 
         val sliders = LinearLayout(this)
         sliders.orientation = LinearLayout.VERTICAL
@@ -240,9 +254,12 @@ class ImageEditorActivity : AppCompatActivity() {
         sliders.addView(slider("Contrast", 50, 150, 100) { con = it; refreshFilter() })
         sliders.addView(slider("Saturation", 0, 200, 100) { sat = it; refreshFilter() })
         sliders.addView(slider("Sharpen", 0, 100, 0) { shp = it })
+        sliders.addView(slider("Vignette", 0, 100, 0) { vig = it })
+        sliders.addView(slider("Size %", 10, 100, 100) { sizePct = it })
+        sliders.addView(slider("Quality", 50, 100, 95) { quality = it })
         val sv = ScrollView(this)
         sv.addView(sliders)
-        root.addView(sv, UiKit.lp(-1, UiKit.dp(this, 190)))
+        root.addView(sv, UiKit.lp(-1, UiKit.dp(this, 210)))
         setContentView(root)
     }
 
@@ -277,7 +294,35 @@ class ImageEditorActivity : AppCompatActivity() {
         return row
     }
 
-    private fun matrixFor(b: Int, c: Int, s: Int): ColorMatrix {
+    private fun buildFilters() {
+        filterRow.removeAllViews()
+        filterNames.forEachIndexed { i, n ->
+            filterRow.addView(Design.chip(this, n, i == filterIdx) { filterIdx = i; buildFilters(); refreshFilter() })
+        }
+    }
+
+    private fun filterMatrix(i: Int): ColorMatrix = when (i) {
+        1 -> ColorMatrix().apply { setSaturation(0f) }
+        2 -> ColorMatrix(floatArrayOf(0.393f, 0.769f, 0.189f, 0f, 0f, 0.349f, 0.686f, 0.168f, 0f, 0f, 0.272f, 0.534f, 0.131f, 0f, 0f, 0f, 0f, 0f, 1f, 0f))
+        3 -> ColorMatrix().apply { setSaturation(1.6f) }
+        4 -> ColorMatrix(floatArrayOf(0.9f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 1.15f, 0f, 0f, 0f, 0f, 0f, 1f, 0f))
+        5 -> ColorMatrix(floatArrayOf(1.15f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 0f, 0f, 0f, 0f, 0.85f, 0f, 0f, 0f, 0f, 0f, 1f, 0f))
+        6 -> ColorMatrix(floatArrayOf(0.85f, 0f, 0f, 0f, 25f, 0f, 0.85f, 0f, 0f, 25f, 0f, 0f, 0.85f, 0f, 25f, 0f, 0f, 0f, 1f, 0f))
+        7 -> ColorMatrix(floatArrayOf(-1f, 0f, 0f, 0f, 255f, 0f, -1f, 0f, 0f, 255f, 0f, 0f, -1f, 0f, 255f, 0f, 0f, 0f, 1f, 0f))
+        else -> ColorMatrix()
+    }
+
+    private fun vignette(b: Bitmap, k: Float): Bitmap {
+        val o = b.copy(Bitmap.Config.ARGB_8888, true)
+        val r = hypot(o.width / 2f, o.height / 2f)
+        val p = Paint()
+        p.shader = android.graphics.RadialGradient(o.width / 2f, o.height / 2f, r,
+            intArrayOf(0x00000000, 0x00000000, (k * 200).toInt() shl 24), floatArrayOf(0f, 0.55f, 1f), android.graphics.Shader.TileMode.CLAMP)
+        Canvas(o).drawRect(0f, 0f, o.width.toFloat(), o.height.toFloat(), p)
+        return o
+    }
+
+    private fun matrixFor(b: Int, c: Int, s: Int, f: Int = 0): ColorMatrix {
         val m = ColorMatrix()
         m.setSaturation(s / 100f)
         val k = c / 100f
@@ -287,10 +332,11 @@ class ImageEditorActivity : AppCompatActivity() {
             0f, k, 0f, 0f, t,
             0f, 0f, k, 0f, t,
             0f, 0f, 0f, 1f, 0f)))
+        if (f > 0) m.postConcat(filterMatrix(f))
         return m
     }
 
-    private fun refreshFilter() { cropView.filter = ColorMatrixColorFilter(matrixFor(bri, con, sat)) }
+    private fun refreshFilter() { cropView.filter = ColorMatrixColorFilter(matrixFor(bri, con, sat, filterIdx)) }
 
     private fun load(f: File): Bitmap? {
         val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -340,6 +386,7 @@ class ImageEditorActivity : AppCompatActivity() {
         val b = cropView.bmp ?: return
         val r = cropView.cropRect()
         val b0 = bri; val c0 = con; val s0 = sat; val sh0 = shp
+        val f0 = filterIdx; val v0 = vig; val z0 = sizePct; val q0 = quality
         val ext0 = src.extension.lowercase()
         val ext = if (ext0 == "png") "png" else if (ext0 == "jpg" || ext0 == "jpeg") ext0 else "jpg"
         saveBtn.isEnabled = false
@@ -350,12 +397,14 @@ class ImageEditorActivity : AppCompatActivity() {
                     val cropped = Bitmap.createBitmap(b, r.left, r.top, r.width(), r.height())
                     val adj = Bitmap.createBitmap(cropped.width, cropped.height, Bitmap.Config.ARGB_8888)
                     val p = Paint(Paint.FILTER_BITMAP_FLAG)
-                    p.colorFilter = ColorMatrixColorFilter(matrixFor(b0, c0, s0))
+                    p.colorFilter = ColorMatrixColorFilter(matrixFor(b0, c0, s0, f0))
                     Canvas(adj).drawBitmap(cropped, 0f, 0f, p)
-                    val fin = if (sh0 > 0) sharpen(adj, sh0 / 100f * 1.2f) else adj
+                    var fin = if (sh0 > 0) sharpen(adj, sh0 / 100f * 1.2f) else adj
+                    if (v0 > 0) fin = vignette(fin, v0 / 100f)
+                    if (z0 < 100) fin = Bitmap.createScaledBitmap(fin, max(1, fin.width * z0 / 100), max(1, fin.height * z0 / 100), true)
                     val out = Editors.outFile(src, ext)
                     FileOutputStream(out).use {
-                        fin.compress(if (ext == "png") Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, 95, it)
+                        fin.compress(if (ext == "png") Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG, q0, it)
                     }
                     out.path
                 } catch (t: Throwable) { null }

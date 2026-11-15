@@ -22,7 +22,11 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.common.audio.ChannelMixingAudioProcessor
 import androidx.media3.common.audio.ChannelMixingMatrix
+import androidx.media3.effect.Brightness
+import androidx.media3.effect.Contrast
 import androidx.media3.effect.Crop
+import androidx.media3.effect.Presentation
+import androidx.media3.effect.RgbFilter
 import androidx.media3.effect.ScaleAndRotateTransformation
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
@@ -59,6 +63,14 @@ class MediaEditorActivity : AppCompatActivity() {
     private var mute = false
     private var vol = 100
     private var transformer: Transformer? = null
+    private var bw = false
+    private var flip = false
+    private var audioOnly = false
+    private var bright = 0
+    private var contrast = 0
+    private var sizeIdx = 0
+    private lateinit var sizeRow: LinearLayout
+    private val sizes = listOf("Original" to 0, "1080p" to 1080, "720p" to 720, "480p" to 480)
     private var exporting = false
     private val h = Handler(Looper.getMainLooper())
     private val crops = listOf("Original" to 0f, "1:1" to 1f, "16:9" to 16f / 9f, "9:16" to 9f / 16f, "4:3" to 4f / 3f, "3:4" to 3f / 4f)
@@ -127,6 +139,15 @@ class MediaEditorActivity : AppCompatActivity() {
             optRow = LinearLayout(this)
             col.addView(optRow)
             buildCropRow(); buildOptRow()
+            col.addView(UiKit.text(this, "Size (smaller = smaller file)", 13f, R.color.on_surface_muted))
+            sizeRow = LinearLayout(this)
+            buildSizeRow()
+            val shs = HorizontalScrollView(this)
+            shs.isHorizontalScrollBarEnabled = false
+            shs.addView(sizeRow)
+            col.addView(shs)
+            col.addView(seek("Brightness", -50, 50, 0) { bright = it })
+            col.addView(seek("Contrast", -50, 50, 0) { contrast = it })
         } else {
             val t = UiKit.text(this, "Volume 100%", 13f, R.color.on_surface_muted)
             col.addView(t)
@@ -198,6 +219,9 @@ class MediaEditorActivity : AppCompatActivity() {
         optRow.removeAllViews()
         optRow.addView(Design.chip(this, "⟳ Rotate ${rot}°", rot != 0) { rot = (rot + 90) % 360; buildOptRow() })
         optRow.addView(Design.chip(this, if (mute) "Sound: off" else "Sound: on", mute) { mute = !mute; buildOptRow() })
+        optRow.addView(Design.chip(this, "B&W", bw) { bw = !bw; buildOptRow() })
+        optRow.addView(Design.chip(this, "Flip", flip) { flip = !flip; buildOptRow() })
+        optRow.addView(Design.chip(this, "Audio only", audioOnly) { audioOnly = !audioOnly; buildOptRow() })
     }
 
     private fun export() {
@@ -207,11 +231,12 @@ class MediaEditorActivity : AppCompatActivity() {
         if (e - s < 500L) { UiKit.toast(this, "Keep at least half a second"); return }
         video.pause(); playBtn.text = "Play preview"
 
+        val vid = isVideo && !audioOnly
         val clip = MediaItem.ClippingConfiguration.Builder().setStartPositionMs(s).setEndPositionMs(e).build()
         val item = MediaItem.Builder().setUri(Uri.fromFile(src)).setClippingConfiguration(clip).build()
         val videoFx = ArrayList<Effect>()
         val audioFx = ArrayList<AudioProcessor>()
-        if (isVideo) {
+        if (vid) {
             val ratio = crops[cropIdx].second
             if (ratio > 0f && vw > 0 && vh > 0) {
                 val frame = vw.toFloat() / vh.toFloat()
@@ -224,6 +249,11 @@ class MediaEditorActivity : AppCompatActivity() {
                 }
             }
             if (rot != 0) videoFx.add(ScaleAndRotateTransformation.Builder().setRotationDegrees(rot.toFloat()).build())
+            if (flip) videoFx.add(ScaleAndRotateTransformation.Builder().setScale(-1f, 1f).build())
+            if (bright != 0) videoFx.add(Brightness(bright / 100f))
+            if (contrast != 0) videoFx.add(Contrast(contrast / 100f))
+            if (bw) videoFx.add(RgbFilter.createGrayscaleFilter())
+            if (sizes[sizeIdx].second > 0) videoFx.add(Presentation.createForHeight(sizes[sizeIdx].second))
         } else if (vol != 100) {
             val v = vol / 100f
             val p = ChannelMixingAudioProcessor()
@@ -232,12 +262,12 @@ class MediaEditorActivity : AppCompatActivity() {
             audioFx.add(p)
         }
         val eb = EditedMediaItem.Builder(item).setEffects(Effects(audioFx, videoFx))
-        if (isVideo) eb.setRemoveAudio(mute) else eb.setRemoveVideo(true)
+        if (vid) eb.setRemoveAudio(mute) else eb.setRemoveVideo(true)
 
-        val out = Editors.outFile(src, if (isVideo) "mp4" else "m4a")
+        val out = Editors.outFile(src, if (vid) "mp4" else "m4a")
         outPath = out.path
         val tb = Transformer.Builder(this).setAudioMimeType(MimeTypes.AUDIO_AAC)
-        if (isVideo) tb.setVideoMimeType(MimeTypes.VIDEO_H264)
+        if (vid) tb.setVideoMimeType(MimeTypes.VIDEO_H264)
         val t = tb.addListener(object : Transformer.Listener {
             override fun onCompleted(composition: Composition, exportResult: ExportResult) { finishExport(null) }
             override fun onError(composition: Composition, exportResult: ExportResult, exportException: ExportException) {
@@ -255,6 +285,30 @@ class MediaEditorActivity : AppCompatActivity() {
     }
 
     private var outPath = ""
+
+    private fun buildSizeRow() {
+        sizeRow.removeAllViews()
+        sizes.forEachIndexed { i, (label, _) ->
+            sizeRow.addView(Design.chip(this, label, i == sizeIdx) { sizeIdx = i; buildSizeRow() })
+        }
+    }
+
+    private fun seek(label: String, min: Int, max: Int, init: Int, onChange: (Int) -> Unit): LinearLayout {
+        val row = LinearLayout(this)
+        row.gravity = Gravity.CENTER_VERTICAL
+        val t = UiKit.text(this, "$label $init", 13f, R.color.on_surface_muted)
+        row.addView(t, UiKit.lp(UiKit.dp(this, 130), -2))
+        val sb = SeekBar(this)
+        sb.max = max - min
+        sb.progress = init - min
+        sb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(s: SeekBar?, p: Int, u: Boolean) { t.text = "$label ${p + min}"; onChange(p + min) }
+            override fun onStartTrackingTouch(s: SeekBar?) {}
+            override fun onStopTrackingTouch(s: SeekBar?) {}
+        })
+        row.addView(sb, UiKit.lp(0, -2, 1f))
+        return row
+    }
 
     private fun pollProgress() {
         val t = transformer ?: return
