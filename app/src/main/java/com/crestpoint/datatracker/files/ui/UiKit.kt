@@ -48,18 +48,50 @@ object UiKit {
     }
 }
 
-// UI helper stubs for fragments and analyzers
 object Palette {
     val PRIMARY = 0xFF6200EE.toInt()
     val SURFACE = 0xFF141526.toInt()
     val BACKGROUND = 0xFF0B0B14.toInt()
     val ACCENT = 0xFF8A2BE2.toInt()
+    val TEXT_MUTED = 0xFF888899.toInt()
+
+    fun withAlpha(color: Int, alpha: Float): Int {
+        val a = (Color.alpha(color) * alpha).toInt()
+        return Color.argb(a, Color.red(color), Color.green(color), Color.blue(color))
+    }
 }
 
-class ActionSheet(ctx: Context) {
+class ActionSheet(private val ctx: Context) {
     var title: String = ""
-    fun addAction(action: SheetAction) {}
-    fun show() {}
+    private val actions = mutableListOf<SheetAction>()
+
+    fun addAction(label: String, onClick: () -> Unit) {
+        actions.add(SheetAction(label, onClick))
+    }
+
+    fun addAction(action: SheetAction) {
+        actions.add(action)
+    }
+
+    fun show() {
+        val items = actions.map { it.label }.toTypedArray()
+        androidx.appcompat.app.AlertDialog.Builder(ctx)
+            .setTitle(title.ifEmpty { "Options" })
+            .setItems(items) { _, which ->
+                actions.getOrNull(which)?.onClick?.invoke()
+            }
+            .show()
+    }
 }
 
 data class SheetAction(val label: String, val onClick: () -> Unit)
+
+class RingView(ctx: Context) : View(ctx) {
+    var progress: Float = 0f
+        set(value) { field = value; invalidate() }
+}
+
+class DonutView(ctx: Context) : View(ctx) {
+    var progress: Float = 0f
+        set(value) { field = value; invalidate() }
+}
