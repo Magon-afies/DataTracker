@@ -33,76 +33,77 @@ class CacheBotActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val accent = UiKit.color(this, R.color.brand_purple)
-        val root = LinearLayout(this).apply {
+        val act = this
+        val accent = UiKit.color(act, R.color.brand_purple)
+        val root = LinearLayout(act).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(0xFF0B0B14.toInt())
-            setPadding(UiKit.dp(this, 16), UiKit.dp(this, 32), UiKit.dp(this, 16), UiKit.dp(this, 16))
+            setPadding(UiKit.dp(act, 16), UiKit.dp(act, 32), UiKit.dp(act, 16), UiKit.dp(act, 16))
         }
 
-        val topBar = LinearLayout(this).apply {
+        val topBar = LinearLayout(act).apply {
             gravity = Gravity.CENTER_VERTICAL
-            addView(Glass.iconBtn(this, Glass.BACK) { finish() })
-            addView(UiKit.text(this, "CacheBot Cleaner", 18f, bold = true), UiKit.lp(0, -2, 1f))
-            addView(Glass.iconBtn(this, Glass.SETTINGS, 44) { scanCache() })
+            addView(Glass.iconBtn(act, Glass.BACK) { finish() })
+            addView(UiKit.text(act, "CacheBot Cleaner", 18f, bold = true), UiKit.lp(0, -2, 1f))
+            addView(Glass.iconBtn(act, Glass.SETTINGS, 44) { scanCache() })
         }
         root.addView(topBar)
 
-        val sv = ScrollView(this).apply { isVerticalScrollBarEnabled = false }
-        val contentCol = LinearLayout(this).apply {
+        val sv = ScrollView(act).apply { isVerticalScrollBarEnabled = false }
+        val contentCol = LinearLayout(act).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, UiKit.dp(this, 16), 0, UiKit.dp(this, 16))
+            setPadding(0, UiKit.dp(act, 16), 0, UiKit.dp(act, 16))
         }
 
-        val heroCard = LinearLayout(this).apply {
+        val heroCard = LinearLayout(act).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            background = Design.card(this@CacheBotActivity, 0xFF141526.toInt(), 20)
-            setPadding(UiKit.dp(this, 24), UiKit.dp(this, 28), UiKit.dp(this, 24), UiKit.dp(this, 28))
+            background = Design.card(act, 0xFF141526.toInt(), 20)
+            setPadding(UiKit.dp(act, 24), UiKit.dp(act, 28), UiKit.dp(act, 24), UiKit.dp(act, 28))
             
-            val iconBox = ImageView(this@CacheBotActivity).apply {
+            val iconBox = ImageView(act).apply {
                 setImageDrawable(PathIcon(Glass.CLEANER, accent))
-                layoutParams = LinearLayout.LayoutParams(UiKit.dp(this@CacheBotActivity, 56), UiKit.dp(this@CacheBotActivity, 56))
+                layoutParams = LinearLayout.LayoutParams(UiKit.dp(act, 56), UiKit.dp(act, 56))
             }
             addView(iconBox)
 
-            statusText = UiKit.text(this@CacheBotActivity, "Ready to clean", 15f, R.color.on_surface_muted).apply {
+            statusText = UiKit.text(act, "Ready to clean", 15f, R.color.on_surface_muted).apply {
                 gravity = Gravity.CENTER
-                setPadding(0, UiKit.dp(this@CacheBotActivity, 12), 0, 4)
+                setPadding(0, UiKit.dp(act, 12), 0, 4)
             }
             addView(statusText)
 
-            sizeText = UiKit.text(this@CacheBotActivity, "0 MB", 32f, bold = true).apply {
+            sizeText = UiKit.text(act, "0 MB", 32f, bold = true).apply {
                 gravity = Gravity.CENTER
             }
             addView(sizeText)
 
-            progressBar = ProgressBar(this@CacheBotActivity, null, android.R.attr.progressBarStyleHorizontal).apply {
+            progressBar = ProgressBar(act, null, android.R.attr.progressBarStyleHorizontal).apply {
                 max = 100; progress = 0; isIndeterminate = true
-                layoutParams = LinearLayout.LayoutParams(-1, UiKit.dp(this@CacheBotActivity, 6)).apply {
-                    setMargins(0, UiKit.dp(this@CacheBotActivity, 20), 0, 0)
+                layoutParams = LinearLayout.LayoutParams(-1, UiKit.dp(act, 6)).apply {
+                    setMargins(0, UiKit.dp(act, 20), 0, 0)
                 }
             }
             addView(progressBar)
         }
-        contentCol.addView(heroCard, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, 0, 0, UiKit.dp(this@CacheBotActivity, 16)) })
+        contentCol.addView(heroCard, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, 0, 0, UiKit.dp(act, 16)) })
 
-        cleanButton = LinearLayout(this).apply {
+        cleanButton = LinearLayout(act).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            background = GradientDrawable().apply { setColor(accent); cornerRadius = UiKit.dp(this@CacheBotActivity, 24).toFloat() }
-            setPadding(UiKit.dp(this, 24), UiKit.dp(this, 16), UiKit.dp(this, 24), UiKit.dp(this, 16))
+            background = GradientDrawable().apply { setColor(accent); cornerRadius = UiKit.dp(act, 24).toFloat() }
+            setPadding(UiKit.dp(act, 24), UiKit.dp(act, 16), UiKit.dp(act, 24), UiKit.dp(act, 16))
             setOnClickListener { if (!isScanning && !isCleaning) executeClean() }
             Design.ripple(this, 24)
-            addView(UiKit.text(this@CacheBotActivity, "⚡ Instant Deep Clean", 16f, bold = true).apply { setTextColor(Color.WHITE) })
+            addView(UiKit.text(act, "⚡ Instant Deep Clean", 16f, bold = true).apply { setTextColor(Color.WHITE) })
         }
-        contentCol.addView(cleanButton, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, 0, 0, UiKit.dp(this@CacheBotActivity, 24)) })
+        contentCol.addView(cleanButton, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, 0, 0, UiKit.dp(act, 24)) })
 
-        contentCol.addView(UiKit.text(this, "STORAGE BREAKDOWN", 12f, R.color.on_surface_muted).apply {
-            setPadding(UiKit.dp(this, 4), 0, 0, UiKit.dp(this, 8))
+        contentCol.addView(UiKit.text(act, "STORAGE BREAKDOWN", 12f, R.color.on_surface_muted).apply {
+            setPadding(UiKit.dp(act, 4), 0, 0, UiKit.dp(act, 8))
         })
 
-        detailsContainer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        detailsContainer = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL }
         contentCol.addView(detailsContainer)
 
         sv.addView(contentCol)
@@ -119,6 +120,7 @@ class CacheBotActivity : AppCompatActivity() {
         detailsContainer.removeAllViews()
 
         Thread {
+            val act = this
             val items = ArrayList<Pair<String, Long>>()
             var bytes = 0L
             listOf(cacheDir, externalCacheDir, codeCacheDir).forEach { f ->
@@ -165,7 +167,7 @@ class CacheBotActivity : AppCompatActivity() {
                 cleanButton.alpha = 1f
                 sizeText.text = "0 MB"
                 statusText.text = "Successfully freed " + formatSize(freed) + "!"
-                UiKit.toast(this@CacheBotActivity, "Freed " + formatSize(freed))
+                UiKit.toast(act, "Freed " + formatSize(freed))
                 detailsContainer.removeAllViews()
                 addDetailRow("Temporary Cache", "0 KB")
             }
@@ -173,14 +175,15 @@ class CacheBotActivity : AppCompatActivity() {
     }
 
     private fun addDetailRow(title: String, sizeStr: String) {
-        val row = LinearLayout(this).apply {
+        val act = this
+        val row = LinearLayout(act).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-            background = Design.card(this@CacheBotActivity, 0xFF141526.toInt(), 14)
-            setPadding(UiKit.dp(this@CacheBotActivity, 16), UiKit.dp(this@CacheBotActivity, 14), UiKit.dp(this@CacheBotActivity, 16), UiKit.dp(this@CacheBotActivity, 14))
-            addView(UiKit.text(this@CacheBotActivity, title, 14f, bold = true), LinearLayout.LayoutParams(0, -2, 1f))
-            addView(UiKit.text(this@CacheBotActivity, sizeStr, 13f, R.color.on_surface_muted))
+            background = Design.card(act, 0xFF141526.toInt(), 14)
+            setPadding(UiKit.dp(act, 16), UiKit.dp(act, 14), UiKit.dp(act, 16), UiKit.dp(act, 14))
+            addView(UiKit.text(act, title, 14f, bold = true), LinearLayout.LayoutParams(0, -2, 1f))
+            addView(UiKit.text(act, sizeStr, 13f, R.color.on_surface_muted))
         }
-        detailsContainer.addView(row, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, 0, 0, UiKit.dp(this, 8)) })
+        detailsContainer.addView(row, LinearLayout.LayoutParams(-1, -2).apply { setMargins(0, 0, 0, UiKit.dp(act, 8)) })
     }
 
     private fun formatSize(bytes: Long): String {
