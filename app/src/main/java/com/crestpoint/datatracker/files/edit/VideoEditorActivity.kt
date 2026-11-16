@@ -342,7 +342,7 @@ class VideoEditorActivity : AppCompatActivity() {
             sp.setSpan(BackgroundColorSpan(0x66000000), 0, sp.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             val y = when (textPos) { 0 -> 0.8f; 1 -> 0f; else -> -0.8f }
             val st = OverlaySettings.Builder().setBackgroundFrameAnchor(0f, y).build()
-            fx.add(OverlayEffect(com.google.common.collect.ImmutableList.of<TextureOverlay>(TextOverlay.createStaticTextOverlay(sp, st))))
+            fx.add(OverlayEffect(listOf<TextureOverlay>(TextOverlay.createStaticTextOverlay(sp, st))))
         }
         return fx
     }

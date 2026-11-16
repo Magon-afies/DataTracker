@@ -44,11 +44,6 @@ object UiKit {
         }
         b.text = label
         b.isAllCaps = false
-        b.cornerRadius = dp(ctx, Tokens.R_M)
-        b.insetTop = 0
-        b.insetBottom = 0
-        b.minimumHeight = dp(ctx, 46)
-        if (!outlined) b.backgroundTintList = ColorStateList.valueOf(color(ctx, R.color.brand_purple))
         b.setOnClickListener { onClick(it) }
         return b
     }
@@ -72,7 +67,7 @@ object UiKit {
     fun card(ctx: Context): LinearLayout {
         val c = LinearLayout(ctx)
         c.orientation = LinearLayout.VERTICAL
-        c.background = Tokens.cardBg(ctx)
+        c.background = rounded(ctx, R.color.surface_elevated)
         val p = dp(ctx, 14)
         c.setPadding(p, p, p, p)
         val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
