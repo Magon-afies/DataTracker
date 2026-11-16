@@ -64,13 +64,13 @@ import com.crestpoint.datatracker.files.ui.Glass
 import com.crestpoint.datatracker.files.ui.PathIcon
 import com.crestpoint.datatracker.files.ui.UiKit
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.common.collect.ImmutableList
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
+/** Filmstrip with two trim handles and a playhead. All positions are fractions 0..1. */
 class TimelineView(ctx: android.content.Context) : View(ctx) {
     var frames: List<Bitmap?> = emptyList()
         set(v) { field = v; invalidate() }
@@ -98,7 +98,8 @@ class TimelineView(ctx: android.content.Context) : View(ctx) {
 
     override fun onDraw(c: Canvas) {
         val hgt = height.toFloat()
-        val l = hw; val r = width - hw
+        val l = hw
+        val r = width - hw
         val clip = Path()
         clip.addRoundRect(RectF(l, 0f, r, hgt), 10f * d, 10f * d, Path.Direction.CW)
         c.save()
@@ -114,7 +115,8 @@ class TimelineView(ctx: android.content.Context) : View(ctx) {
         c.drawRect(l, 0f, tx(start), hgt, dim)
         c.drawRect(tx(end), 0f, r, hgt, dim)
         c.restore()
-        val xs = tx(start); val xe = tx(end)
+        val xs = tx(start)
+        val xe = tx(end)
         c.drawRect(xs, 1.5f * d, xe, hgt - 1.5f * d, frame)
         c.drawRoundRect(RectF(xs - hw, 0f, xs, hgt), 8f * d, 8f * d, handle)
         c.drawRoundRect(RectF(xe, 0f, xe + hw, hgt), 8f * d, 8f * d, handle)
@@ -129,7 +131,9 @@ class TimelineView(ctx: android.content.Context) : View(ctx) {
     override fun onTouchEvent(e: MotionEvent): Boolean {
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                val xs = tx(start); val xe = tx(end); val grab = 30f * d
+                val xs = tx(start)
+                val xe = tx(end)
+                val grab = 30f * d
                 drag = if (abs(e.x - (xs - hw / 2f)) < grab) 1 else if (abs(e.x - (xe + hw / 2f)) < grab) 2 else 3
                 parent?.requestDisallowInterceptTouchEvent(true)
                 move(e.x)
@@ -155,27 +159,49 @@ private fun tfmt(ms: Long): String {
     return "%d:%02d".format(s / 60, s % 60)
 }
 
+/** Video editor: live preview of every change, filmstrip trim, crop, filters, text, audio, export size. */
 class VideoEditorActivity : AppCompatActivity() {
     private lateinit var src: File
-    private var dur = 0L; private var vw = 0; private var vh = 0
+    private var dur = 0L
+    private var vw = 0
+    private var vh = 0
     private var player: ExoPlayer? = null
     private lateinit var tl: TimelineView
-    private lateinit var tStart: TextView; private lateinit var tHead: TextView; private lateinit var tEnd: TextView
-    private lateinit var panel: FrameLayout; private lateinit var tabRow: LinearLayout
-    private lateinit var overlay: FrameLayout; private lateinit var overlayText: TextView; private lateinit var overlayBar: ProgressBar
+    private lateinit var tStart: TextView
+    private lateinit var tHead: TextView
+    private lateinit var tEnd: TextView
+    private lateinit var panel: FrameLayout
+    private lateinit var tabRow: LinearLayout
+    private lateinit var overlay: FrameLayout
+    private lateinit var overlayText: TextView
+    private lateinit var overlayBar: ProgressBar
     private lateinit var playIcon: ImageView
-    private var tab = 0; private var cropIdx = 0; private var rot = 0; private var flip = false
-    private var bright = 0; private var contrast = 0; private var filterIdx = 0
-    private var textStr = ""; private var textPos = 2; private var mute = false; private var vol = 100
-    private var sizeIdx = 0; private var audioOnly = false
-    private var transformer: Transformer? = null; private var exporting = false; private var outPath = ""
+    private lateinit var exportBtn: View
+    private var tab = 0
+    private var cropIdx = 0
+    private var rot = 0
+    private var flip = false
+    private var bright = 0
+    private var contrast = 0
+    private var filterIdx = 0
+    private var textStr = ""
+    private var textPos = 2
+    private var mute = false
+    private var vol = 100
+    private var sizeIdx = 0
+    private var audioOnly = false
+    private var transformer: Transformer? = null
+    private var exporting = false
+    private var outPath = ""
     private val h = Handler(Looper.getMainLooper())
     private val previewRun = Runnable { applyPreview() }
     private val crops = listOf("Original" to 0f, "1:1" to 1f, "16:9" to 16f / 9f, "9:16" to 9f / 16f, "4:3" to 4f / 3f, "3:4" to 3f / 4f, "21:9" to 21f / 9f)
     private val filters = listOf("None", "B&W", "Warm", "Cool", "Invert")
     private val sizes = listOf("Original" to 0, "1080p" to 1080, "720p" to 720, "480p" to 480)
     private val tabs = listOf("Crop", "Adjust", "Filters", "Text", "Audio", "Output")
-    private val tick = object : Runnable { override fun run() { onTick(); h.postDelayed(this, 100) } }
+    private val tick = object : Runnable {
+        override fun run() { onTick(); h.postDelayed(this, 100) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -188,29 +214,44 @@ class VideoEditorActivity : AppCompatActivity() {
             vh = mr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 0
             val rt = mr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull() ?: 0
             if (rt == 90 || rt == 270) { val t = vw; vw = vh; vh = t }
-        } catch (_: Exception) {} finally { try { mr.release() } catch (_: Exception) {} }
+        } catch (_: Exception) {
+        } finally {
+            try { mr.release() } catch (_: Exception) {}
+        }
         if (dur < 1000L) { UiKit.toast(this, "Cannot read this video"); finish(); return }
 
         val accent = UiKit.color(this, R.color.brand_purple)
-        val outer = FrameLayout(this); outer.setBackgroundColor(0xFF0B0B14.toInt())
-        val col = LinearLayout(this); col.orientation = LinearLayout.VERTICAL
+        val outer = FrameLayout(this)
+        outer.setBackgroundColor(0xFF0B0B14.toInt())
+        val col = LinearLayout(this)
+        col.orientation = LinearLayout.VERTICAL
         col.setPadding(UiKit.dp(this, 10), UiKit.dp(this, 26), UiKit.dp(this, 10), UiKit.dp(this, 10))
 
-        val top = LinearLayout(this); top.gravity = Gravity.CENTER_VERTICAL
+        val top = LinearLayout(this)
+        top.gravity = Gravity.CENTER_VERTICAL
         top.addView(Glass.iconBtn(this, Glass.CLOSE) { finish() })
-        top.addView(UiKit.text(this, "Video editor", 16f, bold = true), UiKit.lp(0, -2, 1f))
+        val title = UiKit.text(this, "Video editor", 16f, bold = true)
+        top.addView(title, UiKit.lp(0, -2, 1f))
         val ex = UiKit.button(this, "Export") { export() }
         ex.backgroundTintList = ColorStateList.valueOf(accent)
-        top.addView(ex); col.addView(top)
+        exportBtn = ex
+        top.addView(ex)
+        col.addView(top)
 
-        val stage = FrameLayout(this); stage.setBackgroundColor(Color.BLACK)
-        val pv = PlayerView(this); pv.useController = false; stage.addView(pv, FrameLayout.LayoutParams(-1, -1))
+        val stage = FrameLayout(this)
+        stage.setBackgroundColor(Color.BLACK)
+        val pv = PlayerView(this)
+        pv.useController = false
+        stage.addView(pv, FrameLayout.LayoutParams(-1, -1))
         playIcon = ImageView(this)
-        val pp = UiKit.dp(this, 16); playIcon.setPadding(pp, pp, pp, pp)
+        val pp = UiKit.dp(this, 16)
+        playIcon.setPadding(pp, pp, pp, pp)
         playIcon.background = Glass.circle(0x99000000.toInt())
         stage.addView(playIcon, FrameLayout.LayoutParams(UiKit.dp(this, 64), UiKit.dp(this, 64), Gravity.CENTER))
-        stage.setOnClickListener { togglePlay() }; playIcon.setOnClickListener { togglePlay() }
-        val sl = LinearLayout.LayoutParams(-1, 0, 1f); sl.setMargins(0, UiKit.dp(this, 6), 0, UiKit.dp(this, 6))
+        stage.setOnClickListener { togglePlay() }
+        playIcon.setOnClickListener { togglePlay() }
+        val sl = LinearLayout.LayoutParams(-1, 0, 1f)
+        sl.setMargins(0, UiKit.dp(this, 6), 0, UiKit.dp(this, 6))
         col.addView(stage, sl)
 
         tl = TimelineView(this)
@@ -231,28 +272,48 @@ class VideoEditorActivity : AppCompatActivity() {
         col.addView(times)
 
         tabRow = LinearLayout(this)
-        val tabScroll = HorizontalScrollView(this); tabScroll.isHorizontalScrollBarEnabled = false; tabScroll.addView(tabRow)
+        val tabScroll = HorizontalScrollView(this)
+        tabScroll.isHorizontalScrollBarEnabled = false
+        tabScroll.addView(tabRow)
         col.addView(tabScroll)
-        panel = FrameLayout(this); col.addView(panel, UiKit.lp(-1, UiKit.dp(this, 132)))
+        panel = FrameLayout(this)
+        col.addView(panel, UiKit.lp(-1, UiKit.dp(this, 132)))
         outer.addView(col, FrameLayout.LayoutParams(-1, -1))
 
-        overlay = FrameLayout(this); overlay.setBackgroundColor(0xE6000000.toInt()); overlay.visibility = View.GONE; overlay.isClickable = true
-        val card = LinearLayout(this); card.orientation = LinearLayout.VERTICAL; card.gravity = Gravity.CENTER
+        // export overlay
+        overlay = FrameLayout(this)
+        overlay.setBackgroundColor(0xE6000000.toInt())
+        overlay.visibility = View.GONE
+        overlay.isClickable = true
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.gravity = Gravity.CENTER
         card.setPadding(UiKit.dp(this, 24), UiKit.dp(this, 24), UiKit.dp(this, 24), UiKit.dp(this, 24))
         overlayText = UiKit.text(this, "Exporting…", 16f, bold = true)
-        overlayBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal); overlayBar.max = 100
-        card.addView(overlayText); card.addView(overlayBar, UiKit.lp(UiKit.dp(this, 240), -2))
+        overlayBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal)
+        overlayBar.max = 100
+        card.addView(overlayText)
+        card.addView(overlayBar, UiKit.lp(UiKit.dp(this, 240), -2))
         card.addView(UiKit.text(this, "Keep this screen open", 12f, R.color.on_surface_muted))
         card.addView(UiKit.button(this, "Cancel", true) { cancelExport() })
         overlay.addView(card, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
         outer.addView(overlay, FrameLayout.LayoutParams(-1, -1))
         setContentView(outer)
 
-        val p = ExoPlayer.Builder(this).build(); player = p; pv.player = p
-        p.setMediaItem(MediaItem.fromUri(Uri.fromFile(src))); p.prepare(); p.playWhenReady = false
-        updatePlayIcon(); buildTabs(); buildPanel(); loadThumbs(); h.post(tick)
+        val p = ExoPlayer.Builder(this).build()
+        player = p
+        pv.player = p
+        p.setMediaItem(MediaItem.fromUri(Uri.fromFile(src)))
+        p.prepare()
+        p.playWhenReady = false
+        updatePlayIcon()
+        buildTabs()
+        buildPanel()
+        loadThumbs()
+        h.post(tick)
     }
 
+    // ---------- preview + export share one effect list, so what you see is what you get
     private fun effects(forExport: Boolean): ArrayList<Effect> {
         val fx = ArrayList<Effect>()
         val ratio = crops[cropIdx].second
@@ -281,8 +342,7 @@ class VideoEditorActivity : AppCompatActivity() {
             sp.setSpan(BackgroundColorSpan(0x66000000), 0, sp.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             val y = when (textPos) { 0 -> 0.8f; 1 -> 0f; else -> -0.8f }
             val st = OverlaySettings.Builder().setBackgroundFrameAnchor(0f, y).build()
-            // Using ImmutableList to resolve the compile-time type mismatch correctly
-            fx.add(OverlayEffect(ImmutableList.of<TextureOverlay>(TextOverlay.createStaticTextOverlay(sp, st))))
+            fx.add(OverlayEffect(com.google.common.collect.ImmutableList.of<TextureOverlay>(TextOverlay.createStaticTextOverlay(sp, st))))
         }
         return fx
     }
@@ -298,7 +358,8 @@ class VideoEditorActivity : AppCompatActivity() {
     private fun onTick() {
         val p = player ?: return
         val pos = p.currentPosition
-        val s = (tl.start * dur).toLong(); val e = (tl.end * dur).toLong()
+        val s = (tl.start * dur).toLong()
+        val e = (tl.end * dur).toLong()
         if (p.isPlaying) {
             if (pos >= e) { p.pause(); p.seekTo(s) }
             else if (pos < s - 300) p.seekTo(s)
@@ -316,7 +377,8 @@ class VideoEditorActivity : AppCompatActivity() {
     private fun togglePlay() {
         val p = player ?: return
         if (p.isPlaying) { p.pause(); return }
-        val s = (tl.start * dur).toLong(); val e = (tl.end * dur).toLong()
+        val s = (tl.start * dur).toLong()
+        val e = (tl.end * dur).toLong()
         if (p.currentPosition < s || p.currentPosition >= e - 100) p.seekTo(s)
         p.play()
     }
@@ -334,7 +396,8 @@ class VideoEditorActivity : AppCompatActivity() {
             val mr = MediaMetadataRetriever()
             try {
                 mr.setDataSource(src.path)
-                val n = 10; val got = ArrayList<Bitmap?>()
+                val n = 10
+                val got = ArrayList<Bitmap?>()
                 for (i in 0 until n) {
                     if (isDestroyed) break
                     val t = min(dur * 1000L * i / n + 100_000L, dur * 1000L - 1)
@@ -343,26 +406,36 @@ class VideoEditorActivity : AppCompatActivity() {
                     while (snap.size < n) snap.add(null)
                     runOnUiThread { tl.frames = snap }
                 }
-            } catch (_: Throwable) {} finally { try { mr.release() } catch (_: Exception) {} }
+            } catch (_: Throwable) {
+            } finally {
+                try { mr.release() } catch (_: Exception) {}
+            }
         }.start()
     }
 
+    // ---------- tabs and panels
     private fun buildTabs() {
         tabRow.removeAllViews()
         tabs.forEachIndexed { i, n -> tabRow.addView(Design.chip(this, n, i == tab) { tab = i; buildTabs(); buildPanel() }) }
     }
 
     private fun chipRow(vararg chips: View): View {
-        val r = LinearLayout(this); chips.forEach { r.addView(it) }
-        val hs = HorizontalScrollView(this); hs.isHorizontalScrollBarEnabled = false; hs.addView(r)
+        val r = LinearLayout(this)
+        chips.forEach { r.addView(it) }
+        val hs = HorizontalScrollView(this)
+        hs.isHorizontalScrollBarEnabled = false
+        hs.addView(r)
         return hs
     }
 
     private fun seek(label: String, min: Int, max: Int, init: Int, onChange: (Int) -> Unit): LinearLayout {
-        val row = LinearLayout(this); row.gravity = Gravity.CENTER_VERTICAL
+        val row = LinearLayout(this)
+        row.gravity = Gravity.CENTER_VERTICAL
         val t = UiKit.text(this, "$label $init", 13f, R.color.on_surface_muted)
         row.addView(t, UiKit.lp(UiKit.dp(this, 120), -2))
-        val sb = SeekBar(this); sb.max = max - min; sb.progress = init - min
+        val sb = SeekBar(this)
+        sb.max = max - min
+        sb.progress = init - min
         sb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(s: SeekBar?, p: Int, u: Boolean) { t.text = "$label ${p + min}"; onChange(p + min); schedulePreview() }
             override fun onStartTrackingTouch(s: SeekBar?) {}
@@ -374,7 +447,8 @@ class VideoEditorActivity : AppCompatActivity() {
 
     private fun buildPanel() {
         panel.removeAllViews()
-        val box = LinearLayout(this); box.orientation = LinearLayout.VERTICAL
+        val box = LinearLayout(this)
+        box.orientation = LinearLayout.VERTICAL
         when (tab) {
             0 -> {
                 val rs = crops.mapIndexed { i, c -> Design.chip(this, c.first, i == cropIdx) { cropIdx = i; applyPreview(); buildPanel() } }
@@ -416,14 +490,21 @@ class VideoEditorActivity : AppCompatActivity() {
                 ))
             }
         }
-        val sv = ScrollView(this); sv.addView(box); panel.addView(sv)
+        val sv = ScrollView(this)
+        sv.addView(box)
+        panel.addView(sv)
     }
 
     private fun askText() {
-        val et = EditText(this); et.setText(textStr); et.hint = "Caption"
-        MaterialAlertDialogBuilder(this).setTitle("Text on video").setView(et)
+        val et = EditText(this)
+        et.setText(textStr)
+        et.hint = "Caption"
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Text on video")
+            .setView(et)
             .setPositiveButton("OK") { _, _ -> textStr = et.text.toString().trim(); applyPreview(); buildPanel() }
-            .setNegativeButton("Cancel", null).show()
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun saveFrame() {
@@ -439,13 +520,18 @@ class VideoEditorActivity : AppCompatActivity() {
                     MediaScannerConnection.scanFile(this, arrayOf(out.path), null, null)
                     runOnUiThread { UiKit.toast(this, "Saved " + out.name) }
                 }
-            } catch (_: Throwable) {} finally { try { mr.release() } catch (_: Exception) {} }
+            } catch (_: Throwable) {
+            } finally {
+                try { mr.release() } catch (_: Exception) {}
+            }
         }.start()
     }
 
+    // ---------- export
     private fun export() {
         if (exporting) return
-        val s = (tl.start * dur).toLong(); val e = (tl.end * dur).toLong()
+        val s = (tl.start * dur).toLong()
+        val e = (tl.end * dur).toLong()
         if (e - s < 500L) { UiKit.toast(this, "Keep at least half a second"); return }
         player?.pause()
         val clip = MediaItem.ClippingConfiguration.Builder().setStartPositionMs(s).setEndPositionMs(e).build()
@@ -471,8 +557,11 @@ class VideoEditorActivity : AppCompatActivity() {
                 finishExport(exportException.message ?: "Export failed")
             }
         }).build()
-        transformer = t; exporting = true
-        overlay.visibility = View.VISIBLE; overlayBar.progress = 0; overlayText.text = "Exporting…"
+        transformer = t
+        exporting = true
+        overlay.visibility = View.VISIBLE
+        overlayBar.progress = 0
+        overlayText.text = "Exporting…"
         t.start(eb.build(), out.absolutePath)
         pollProgress()
     }
@@ -490,13 +579,15 @@ class VideoEditorActivity : AppCompatActivity() {
 
     private fun cancelExport() {
         try { transformer?.cancel() } catch (_: Exception) {}
-        exporting = false; overlay.visibility = View.GONE
+        exporting = false
+        overlay.visibility = View.GONE
         try { File(outPath).delete() } catch (_: Exception) {}
     }
 
     private fun finishExport(error: String?) {
         if (!exporting) return
-        exporting = false; overlay.visibility = View.GONE
+        exporting = false
+        overlay.visibility = View.GONE
         if (error != null) {
             try { File(outPath).delete() } catch (_: Exception) {}
             UiKit.toast(this, "Could not export: $error")
@@ -508,10 +599,12 @@ class VideoEditorActivity : AppCompatActivity() {
     }
 
     override fun onStop() { super.onStop(); try { player?.pause() } catch (_: Exception) {} }
+
     override fun onDestroy() {
         h.removeCallbacksAndMessages(null)
         if (exporting) { try { transformer?.cancel() } catch (_: Exception) {}; try { File(outPath).delete() } catch (_: Exception) {} }
-        player?.release(); player = null
+        player?.release()
+        player = null
         super.onDestroy()
     }
 }

@@ -3,7 +3,6 @@ package com.crestpoint.datatracker.files.edit
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.os.Environment
 import com.crestpoint.datatracker.files.FileKind
 import com.crestpoint.datatracker.files.FileKinds
 import java.io.File
@@ -17,8 +16,7 @@ object Editors {
 
     fun open(ctx: Context, f: File) {
         if (!canEdit(f)) return
-        val k = FileKinds.of(f)
-        val cls = when (k) {
+        val cls = when (FileKinds.of(f)) {
             FileKind.IMAGE -> SnapEditorActivity::class.java
             FileKind.VIDEO -> VideoEditorActivity::class.java
             else -> MediaEditorActivity::class.java
@@ -28,9 +26,10 @@ object Editors {
         ctx.startActivity(i)
     }
 
+    /** name_edited.ext, name_edited2.ext ... next to the original. Never overwrites. */
     fun outFile(src: File, ext: String): File {
         val dir = if (src.path.contains("/open_with/"))
-            File(Environment.getExternalStorageDirectory(), "Download").also { it.mkdirs() }
+            File(android.os.Environment.getExternalStorageDirectory(), "Download").also { it.mkdirs() }
         else (src.parentFile ?: src.absoluteFile.parentFile)
         var n = File(dir, "${src.nameWithoutExtension}_edited.$ext")
         var i = 2

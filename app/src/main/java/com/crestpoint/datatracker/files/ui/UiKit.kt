@@ -2,125 +2,117 @@ package com.crestpoint.datatracker.files.ui
 
 import android.content.Context
 import android.content.res.ColorStateList
-import android.graphics.Color
+import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.RippleDrawable
-import android.view.Gravity
+import android.text.InputType
+import android.util.TypedValue
 import android.view.View
-import android.widget.Button
-import android.widget.ImageView
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.crestpoint.datatracker.R
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
+/** Tiny helpers so the Files suite can build its screens in code (no extra XML to keep in sync). */
 object UiKit {
-    fun dp(ctx: Context, n: Int): Int = (n * ctx.resources.displayMetrics.density).toInt()
-    
-    fun color(ctx: Context, resId: Int): Int = try {
-        ctx.resources.getColor(resId, ctx.theme)
-    } catch (_: Exception) {
-        try { ctx.resources.getColor(resId) } catch (_: Exception) { 0xFF6200EE.toInt() }
+    fun dp(ctx: Context, v: Int): Int = (v * ctx.resources.displayMetrics.density).toInt()
+    fun color(ctx: Context, res: Int): Int = ContextCompat.getColor(ctx, res)
+
+    fun text(
+        ctx: Context, s: CharSequence, sp: Float = 14f,
+        colorRes: Int = R.color.on_surface, bold: Boolean = false
+    ): TextView {
+        val t = TextView(ctx)
+        t.text = s
+        t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
+        t.setTextColor(color(ctx, colorRes))
+        if (s is String && Icons.has(s)) Icons.set(t, s)
+        if (bold) t.setTypeface(t.typeface, Typeface.BOLD)
+        return t
     }
 
-    fun text(ctx: Context, str: String, sz: Float, colRes: Int = android.R.color.white, bold: Boolean = false): TextView {
-        return TextView(ctx).apply {
-            text = str
-            textSize = sz
-            setTextColor(if (colRes == android.R.color.white || colRes == R.color.white) Color.WHITE else color(ctx, colRes))
-            if (bold) setTypeface(null, android.graphics.Typeface.BOLD)
+    fun button(ctx: Context, label: String, outlined: Boolean = false, onClick: (View) -> Unit): MaterialButton {
+        val b = if (outlined) {
+            MaterialButton(ctx, null, com.google.android.material.R.attr.materialButtonOutlinedStyle)
+        } else {
+            MaterialButton(ctx)
         }
+        b.text = label
+        b.isAllCaps = false
+        b.setOnClickListener { onClick(it) }
+        return b
     }
 
-    fun button(ctx: Context, label: String, secondary: Boolean = false, onClick: () -> Unit): Button {
-        return Button(ctx).apply {
-            text = label
-            isAllCaps = false
-            setOnClickListener { onClick() }
-        }
+    fun iconBtn(ctx: Context, glyph: String, onClick: (View) -> Unit): TextView {
+        val t = text(ctx, glyph, 20f)
+        Icons.set(t, glyph)
+        val p = dp(ctx, 10)
+        t.setPadding(p, p, p, p)
+        t.setOnClickListener { onClick(it) }
+        return t
     }
 
-    fun toast(ctx: Context, msg: String) {
-        Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+    fun rounded(ctx: Context, colorRes: Int, radiusDp: Int = 14): GradientDrawable {
+        val g = GradientDrawable()
+        g.setColor(color(ctx, colorRes))
+        g.cornerRadius = dp(ctx, radiusDp).toFloat()
+        return g
     }
 
-    fun lp(w: Int, h: Int, weight: Float = 0f): LinearLayout.LayoutParams {
-        return LinearLayout.LayoutParams(w, h, weight)
-    }
-}
-
-object Design {
-    fun ripple(v: View, radiusDp: Int = 12) {
-        val ctx = v.context
-        val mask = GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = UiKit.dp(ctx, radiusDp).toFloat()
-            setColor(Color.WHITE)
-        }
-        v.background = RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), v.background, mask)
+    fun card(ctx: Context): LinearLayout {
+        val c = LinearLayout(ctx)
+        c.orientation = LinearLayout.VERTICAL
+        c.background = rounded(ctx, R.color.surface_elevated)
+        val p = dp(ctx, 14)
+        c.setPadding(p, p, p, p)
+        val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        lp.setMargins(dp(ctx, 12), dp(ctx, 6), dp(ctx, 12), dp(ctx, 6))
+        c.layoutParams = lp
+        return c
     }
 
-    fun card(ctx: Context, bgCol: Int = 0xFF141526.toInt(), radiusDp: Int = 16): GradientDrawable {
-        return GradientDrawable().apply {
-            setColor(bgCol)
-            cornerRadius = UiKit.dp(ctx, radiusDp).toFloat()
-            setStroke(UiKit.dp(ctx, 1), 0x22FFFFFF)
-        }
+    fun progress(ctx: Context, fraction: Float): ProgressBar {
+        val pb = ProgressBar(ctx, null, android.R.attr.progressBarStyleHorizontal)
+        pb.max = 1000
+        pb.progress = (fraction.coerceIn(0f, 1f) * 1000).toInt()
+        pb.progressTintList = ColorStateList.valueOf(color(ctx, R.color.brand_purple))
+        val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(ctx, 8))
+        lp.topMargin = dp(ctx, 8)
+        pb.layoutParams = lp
+        return pb
     }
 
-    fun rounded(ctx: Context, col: Int, radiusDp: Int): GradientDrawable {
-        return GradientDrawable().apply {
-            setColor(col)
-            cornerRadius = UiKit.dp(ctx, radiusDp).toFloat()
-        }
-    }
-}
+    fun lp(w: Int, h: Int, weight: Float = 0f): LinearLayout.LayoutParams = LinearLayout.LayoutParams(w, h, weight)
 
-object Palette {
-    val PRIMARY = 0xFF6200EE.toInt()
-    val SURFACE = 0xFF141526.toInt()
-    val BACKGROUND = 0xFF0B0B14.toInt()
-    val ACCENT = 0xFF8A2BE2.toInt()
-    val TEXT_MUTED = 0xFF888899.toInt()
+    fun toast(ctx: Context, s: String) = Toast.makeText(ctx, s, Toast.LENGTH_SHORT).show()
 
-    fun withAlpha(color: Int, alpha: Float): Int {
-        val a = (Color.alpha(color) * alpha).toInt()
-        return Color.argb(a, Color.red(color), Color.green(color), Color.blue(color))
-    }
-}
-
-class ActionSheet(private val ctx: Context) {
-    var title: String = ""
-    private val actions = mutableListOf<SheetAction>()
-
-    fun addAction(label: String, onClick: () -> Unit) {
-        actions.add(SheetAction(label, onClick))
+    fun prompt(
+        ctx: Context, title: String, initial: String = "", hint: String = "",
+        password: Boolean = false, onOk: (String) -> Unit
+    ) {
+        val input = EditText(ctx)
+        input.setText(initial)
+        input.hint = hint
+        input.setSingleLine(true)
+        if (password) input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        input.setSelection(input.text.length)
+        val box = FrameLayout(ctx)
+        val p = dp(ctx, 20)
+        box.setPadding(p, dp(ctx, 8), p, 0)
+        box.addView(input)
+        MaterialAlertDialogBuilder(ctx).setTitle(title).setView(box)
+            .setPositiveButton("OK") { _, _ -> onOk(input.text.toString()) }
+            .setNegativeButton("Cancel", null).show()
     }
 
-    fun addAction(action: SheetAction) {
-        actions.add(action)
+    fun confirm(ctx: Context, title: String, message: String, yes: String = "OK", onYes: () -> Unit) {
+        MaterialAlertDialogBuilder(ctx).setTitle(title).setMessage(message)
+            .setPositiveButton(yes) { _, _ -> onYes() }
+            .setNegativeButton("Cancel", null).show()
     }
-
-    fun show() {
-        val items = actions.map { it.label }.toTypedArray()
-        androidx.appcompat.app.AlertDialog.Builder(ctx)
-            .setTitle(title.ifEmpty { "Options" })
-            .setItems(items) { _, which ->
-                actions.getOrNull(which)?.onClick?.invoke()
-            }
-            .show()
-    }
-}
-
-data class SheetAction(val label: String, val onClick: () -> Unit)
-
-class RingView(ctx: Context) : View(ctx) {
-    var progress: Float = 0f
-        set(value) { field = value; invalidate() }
-}
-
-class DonutView(ctx: Context) : View(ctx) {
-    var progress: Float = 0f
-        set(value) { field = value; invalidate() }
-    fun setData(vals: FloatArray, colors: IntArray) { invalidate() }
 }
