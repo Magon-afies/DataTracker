@@ -478,19 +478,6 @@ class FilesFragment : Fragment() {
         val ctx = requireContext()
         homeBox.removeAllViews()
 
-        // search shortcut at the top of Home
-        val searchBar = LinearLayout(ctx)
-        searchBar.gravity = Gravity.CENTER_VERTICAL
-        searchBar.background = com.crestpoint.datatracker.files.ui.Tokens.cardBg(ctx, 28)
-        searchBar.setPadding(UiKit.dp(ctx, 16), UiKit.dp(ctx, 12), UiKit.dp(ctx, 16), UiKit.dp(ctx, 12))
-        searchBar.addView(UiKit.text(ctx, "🔍", 18f))
-        searchBar.addView(UiKit.text(ctx, "  Search files and folders", 14f, R.color.on_surface_muted))
-        searchBar.setOnClickListener { toggleSearch() }
-        Design.ripple(searchBar)
-        val slp = LinearLayout.LayoutParams(-1, -2)
-        slp.setMargins(UiKit.dp(ctx, 14), UiKit.dp(ctx, 6), UiKit.dp(ctx, 14), UiKit.dp(ctx, 6))
-        homeBox.addView(searchBar, slp)
-
         // hero storage card
         val rts = roots()
         val first = rts.first()
@@ -610,38 +597,23 @@ class FilesFragment : Fragment() {
             homeBox.addView(row)
         }
 
-        section("CLEAN UP")
+        section("PHONE MANAGER")
         gridRows(listOf(
-            catTile("🧹", "Junk", 0xFFFF8A65.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.JUNK) },
-            catTile("👯", "Duplicates", 0xFF64B5F6.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.DUPLICATES) },
-            catTile("🐘", "Large", 0xFFFFB74D.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.LARGE) },
-            catTile("🕰️", "Old files", 0xFF9FA8DA.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.OLD) }
-        ), 4)
-
-        section("TOOLS")
-        gridRows(listOf(
-            catTile("📊", "Analyzer", 0xFF4DB6AC.toInt()) { startActivity(Intent(ctx, StorageAnalyzerActivity::class.java)) },
-            catTile("💬", "Chat media", 0xFF81C784.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.CHAT_MEDIA) },
-            catTile("🧩", "Apps", 0xFFBA68C8.toInt()) { startActivity(Intent(ctx, AppManagerActivity::class.java)) },
-            catTile("📵", "Data bot", 0xFF26C6DA.toInt()) { startActivity(Intent(ctx, DataBotActivity::class.java)) },
-            catTile("🔐", "Vault", 0xFF7657F6.toInt()) { startActivity(Intent(ctx, VaultActivity::class.java)) },
-            catTile("📡", "Wi-Fi", 0xFF4FC3F7.toInt()) { startActivity(Intent(ctx, WifiShareActivity::class.java)) },
-            catTile("🌐", "Remote", 0xFF4DD0E1.toInt()) { startActivity(Intent(ctx, RemoteActivity::class.java)) },
-            catTile("🎧", "Music", 0xFFF06292.toInt()) { startActivity(Intent(ctx, MusicActivity::class.java)) },
-            catTile("📱", "APKs", 0xFFAED581.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.APKS) },
-            catTile("🗑️", "Bin", 0xFF90A4AE.toInt()) { startActivity(Intent(ctx, TrashActivity::class.java)) }
-        ), 4)
-
-        // sections slide in the first time Home is shown
-        if (homeBox.tag != "shown") {
-            homeBox.tag = "shown"
-            for (i in 0 until homeBox.childCount) {
-                val v = homeBox.getChildAt(i)
-                v.alpha = 0f
-                v.translationY = UiKit.dp(ctx, 16).toFloat()
-                v.animate().alpha(1f).translationY(0f).setStartDelay(i * 35L).setDuration(260).start()
-            }
-        }
+            toolCard("🧹", "Junk cleaner", "Free up space safely", 0xFFFF8A65.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.JUNK) },
+            toolCard("👯", "Duplicates", "Find identical copies", 0xFF64B5F6.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.DUPLICATES) },
+            toolCard("🐘", "Large files", "Biggest space hogs", 0xFFFFB74D.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.LARGE) },
+            toolCard("🕰️", "Old files", "Untouched for months", 0xFF9FA8DA.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.OLD) },
+            toolCard("📊", "Analyzer", "See what's using storage", 0xFF4DB6AC.toInt()) { startActivity(Intent(ctx, StorageAnalyzerActivity::class.java)) },
+            toolCard("💬", "Chat media", "WhatsApp & Telegram", 0xFF81C784.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.CHAT_MEDIA) },
+            toolCard("🧩", "App manager", "Backup & uninstall", 0xFFBA68C8.toInt()) { startActivity(Intent(ctx, AppManagerActivity::class.java)) },
+            toolCard("📵", "Data bot", "Stop background data", 0xFF26C6DA.toInt()) { startActivity(Intent(ctx, DataBotActivity::class.java)) },
+            toolCard("🔐", "Vault", "Locked & encrypted", 0xFF7657F6.toInt()) { startActivity(Intent(ctx, VaultActivity::class.java)) },
+            toolCard("📡", "Wi-Fi share", "Use files from your PC", 0xFF4FC3F7.toInt()) { startActivity(Intent(ctx, WifiShareActivity::class.java)) },
+            toolCard("🌐", "Remote (FTP)", "Servers, NAS, hosting", 0xFF4DD0E1.toInt()) { startActivity(Intent(ctx, RemoteActivity::class.java)) },
+            toolCard("🎧", "Music player", "Plays in background", 0xFFF06292.toInt()) { startActivity(Intent(ctx, MusicActivity::class.java)) },
+            toolCard("📱", "APK files", "Installers on this phone", 0xFFAED581.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.APKS) },
+            toolCard("🗑️", "Recycle Bin", "Restore deleted files", 0xFF90A4AE.toInt()) { startActivity(Intent(ctx, TrashActivity::class.java)) }
+        ), 2)
     }
 
     private fun scanKind(kind: FileKind) {

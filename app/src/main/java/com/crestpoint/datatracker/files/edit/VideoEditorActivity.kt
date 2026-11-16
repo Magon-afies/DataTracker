@@ -277,9 +277,7 @@ class VideoEditorActivity : AppCompatActivity() {
         tabScroll.addView(tabRow)
         col.addView(tabScroll)
         panel = FrameLayout(this)
-        panel.background = com.crestpoint.datatracker.files.ui.Tokens.cardBg(this)
-        panel.setPadding(UiKit.dp(this, 8), UiKit.dp(this, 6), UiKit.dp(this, 8), UiKit.dp(this, 6))
-        col.addView(panel, UiKit.lp(-1, UiKit.dp(this, 150)))
+        col.addView(panel, UiKit.lp(-1, UiKit.dp(this, 132)))
         outer.addView(col, FrameLayout.LayoutParams(-1, -1))
 
         // export overlay
@@ -344,7 +342,7 @@ class VideoEditorActivity : AppCompatActivity() {
             sp.setSpan(BackgroundColorSpan(0x66000000), 0, sp.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             val y = when (textPos) { 0 -> 0.8f; 1 -> 0f; else -> -0.8f }
             val st = OverlaySettings.Builder().setBackgroundFrameAnchor(0f, y).build()
-            fx.add(OverlayEffect(com.google.common.collect.ImmutableList.of<TextureOverlay>(TextOverlay.createStaticTextOverlay(sp, st))))
+            fx.add(OverlayEffect(listOf<TextureOverlay>(TextOverlay.createStaticTextOverlay(sp, st))))
         }
         return fx
     }
@@ -416,37 +414,9 @@ class VideoEditorActivity : AppCompatActivity() {
     }
 
     // ---------- tabs and panels
-    private val tabIcons = listOf(
-        "M17,15h2V7c0,-1.1 -0.9,-2 -2,-2H9v2h8v8zM7,17V1H5v4H1v2h4v10c0,1.1 0.9,2 2,2h10v4h2v-4h4v-2H7z",
-        "M3,17v2h6v-2H3zM3,5v2h10V5H3zM13,21v-2h8v-2h-8v-2h-2v6h2zM7,9v2H3v2h4v2h2V9H7zM21,13v-2H11v2h10zM15,9h2V7h4V5h-4V3h-2v6z",
-        "M19,9l1.25,-2.75L23,5l-2.75,-1.25L19,1l-1.25,2.75L15,5l2.75,1.25L19,9zM19,15l-1.25,2.75L15,19l2.75,1.25L19,23l1.25,-2.75L23,19l-2.75,-1.25L19,15zM11.5,9.5L9,4 6.5,9.5 1,12l5.5,2.5L9,20l2.5,-5.5L17,12l-5.5,-2.5zM9.99,12.99L9,15.17l-0.99,-2.18L5.83,12l2.18,-0.99L9,8.83l0.99,2.18L12.17,12l-2.18,0.99z",
-        "M2.5,4v3h5v12h3V7h5V4h-13zM21.5,9h-9v3h3v7h3v-7h3V9z",
-        "M12,3v10.55c-0.59,-0.34 -1.27,-0.55 -2,-0.55 -2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V7h4V3h-6z",
-        "M19,9h-4V3H9v6H5l7,7 7,-7zM5,18v2h14v-2H5z"
-    )
-
     private fun buildTabs() {
         tabRow.removeAllViews()
-        val accent = UiKit.color(this, R.color.brand_purple)
-        tabs.forEachIndexed { i, n ->
-            val on = i == tab
-            val box = LinearLayout(this)
-            box.orientation = LinearLayout.VERTICAL
-            box.gravity = Gravity.CENTER
-            if (on) box.background = Glass.pill(0x337657F6, 14, this)
-            val iv = ImageView(this)
-            iv.setImageDrawable(PathIcon(tabIcons[i], if (on) accent else Color.WHITE))
-            box.addView(iv, LinearLayout.LayoutParams(UiKit.dp(this, 24), UiKit.dp(this, 24)))
-            val t = UiKit.text(this, n, 11f, if (on) R.color.on_surface else R.color.on_surface_muted, bold = on)
-            t.gravity = Gravity.CENTER
-            box.addView(t)
-            box.setPadding(UiKit.dp(this, 6), UiKit.dp(this, 8), UiKit.dp(this, 6), UiKit.dp(this, 8))
-            box.setOnClickListener { tab = i; buildTabs(); buildPanel() }
-            Design.ripple(box)
-            val lp = LinearLayout.LayoutParams(UiKit.dp(this, 64), -2)
-            lp.setMargins(UiKit.dp(this, 3), 0, UiKit.dp(this, 3), 0)
-            tabRow.addView(box, lp)
-        }
+        tabs.forEachIndexed { i, n -> tabRow.addView(Design.chip(this, n, i == tab) { tab = i; buildTabs(); buildPanel() }) }
     }
 
     private fun chipRow(vararg chips: View): View {
