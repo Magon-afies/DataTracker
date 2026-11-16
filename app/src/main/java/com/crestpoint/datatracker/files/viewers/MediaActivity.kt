@@ -18,7 +18,11 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.provider.OpenableColumns
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.media3.ui.CaptionStyleCompat
+import androidx.media3.ui.SubtitleView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -83,6 +87,8 @@ class MediaActivity : AppCompatActivity() {
     private var volAcc = -1f
     private var pendingSeek = 0L
     private var abStage = 0
+    private var subScale = 1f
+    private val pickSub = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) addSubtitle(uri) }
     private var abA = 0L
     private var abB = 0L
     private var locked = false
@@ -120,6 +126,8 @@ class MediaActivity : AppCompatActivity() {
         pv = PlayerView(this)
         pv.useController = false
         pv.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
+        pv.subtitleView?.setStyle(CaptionStyleCompat(Color.WHITE, 0x99000000.toInt(), Color.TRANSPARENT, CaptionStyleCompat.EDGE_TYPE_NONE, Color.WHITE, null))
+        pv.subtitleView?.setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * subScale)
         root.addView(pv, FrameLayout.LayoutParams(-1, -1))
 
         // top bar
@@ -194,6 +202,7 @@ class MediaActivity : AppCompatActivity() {
         speedChip.background = Glass.pill(0x55FFFFFF, 16, this)
         speedChip.setPadding(UiKit.dp(this, 14), UiKit.dp(this, 6), UiKit.dp(this, 14), UiKit.dp(this, 6))
         speedChip.setOnClickListener { cycleSpeed() }
+        row2.addView(Glass.iconBtn(this, Glass.CC, 40) { showSubtitleMenu() })
         row2.addView(speedChip)
         bottom.addView(row2)
         bottomBar = bottom
@@ -367,12 +376,55 @@ class MediaActivity : AppCompatActivity() {
         hudText("Volume ${(volAcc * 100 / mx).toInt()}%")
     }
 
+    private fun showSubtitleMenu() {
+        val acts = ArrayList<SheetAction>()
+        acts.add(SheetAction("💬", "Choose subtitle track") { pickTracks(C.TRACK_TYPE_TEXT, "Subtitles") })
+        acts.add(SheetAction("📂", "Add subtitle file (.srt, .vtt, .ass)") { pickSub.launch(arrayOf("*/*")) })
+        acts.add(SheetAction("✎", "Text size: " + (if (subScale < 1f) "small" else if (subScale > 1.3f) "large" else "medium") + " (tap to change)") { cycleSubSize() })
+        acts.add(SheetAction("✕", "Subtitles off") {
+            player?.let { p -> p.trackSelectionParameters = p.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true).build() }
+        })
+        ActionSheet.show(this, "Subtitles", acts)
+    }
+
+    private fun cycleSubSize() {
+        subScale = if (subScale < 1f) 1f else if (subScale < 1.3f) 1.5f else 0.75f
+        pv.subtitleView?.setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * subScale)
+        hudText("Subtitle size changed")
+    }
+
+    private fun addSubtitle(uri: Uri) {
+        val p = player ?: return
+        var name = "Subtitles"
+        try {
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+                if (c.moveToFirst()) c.getString(0)?.let { name = it }
+            }
+        } catch (_: Exception) { }
+        val lower = name.lowercase()
+        val mime = if (lower.endsWith(".vtt")) MimeTypes.TEXT_VTT
+            else if (lower.endsWith(".ass") || lower.endsWith(".ssa")) MimeTypes.TEXT_SSA
+            else MimeTypes.APPLICATION_SUBRIP
+        val cur = p.currentMediaItem ?: return
+        val cfg = MediaItem.SubtitleConfiguration.Builder(uri).setMimeType(mime).setLanguage("und")
+            .setLabel(name).setSelectionFlags(C.SELECTION_FLAG_DEFAULT).build()
+        val existing = cur.localConfiguration?.subtitleConfigurations ?: emptyList<MediaItem.SubtitleConfiguration>()
+        val item = cur.buildUpon().setSubtitleConfigurations(existing + cfg).build()
+        val pos = p.currentPosition
+        val was = p.isPlaying
+        p.trackSelectionParameters = p.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false).build()
+        p.setMediaItem(item, pos)
+        p.prepare()
+        if (was) p.play()
+        hudText("Subtitles added")
+    }
+
     private fun showMore() {
         val p = player ?: return
         val loop = p.repeatMode == Player.REPEAT_MODE_ONE
         val acts = ArrayList<SheetAction>()
         acts.add(SheetAction("🎶", "Audio track") { pickTracks(C.TRACK_TYPE_AUDIO, "Audio track") })
-        acts.add(SheetAction("💬", "Subtitles") { pickTracks(C.TRACK_TYPE_TEXT, "Subtitles") })
+        acts.add(SheetAction("💬", "Subtitles") { showSubtitleMenu() })
         acts.add(SheetAction("🔁", if (loop) "Loop: on (tap to turn off)" else "Loop this video") {
             p.repeatMode = if (loop) Player.REPEAT_MODE_OFF else Player.REPEAT_MODE_ONE
             hudText(if (loop) "Loop off" else "Loop on")
