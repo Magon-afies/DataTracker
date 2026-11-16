@@ -7,6 +7,8 @@
         <item name="android:windowActionModeOverlay">true</item>
         <item name="colorPrimary">@color/brand_purple</item>
         <item name="colorSecondary">@color/brand_cyan</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
         <item name="android:windowBackground">@color/surface</item>
     </style>
 </resources>

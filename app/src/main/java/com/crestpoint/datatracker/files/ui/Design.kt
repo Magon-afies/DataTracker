@@ -72,6 +72,7 @@ object Design {
 
     fun chip(ctx: Context, label: String, filled: Boolean, onClick: (() -> Unit)?): TextView {
         val t = UiKit.text(ctx, label, 13f, if (filled) R.color.on_surface else R.color.on_surface_muted, bold = filled)
+        Icons.setLabel(t, label)
         val g = GradientDrawable()
         g.cornerRadius = UiKit.dp(ctx, 20).toFloat()
         g.setColor(if (filled) Palette.withAlpha(UiKit.color(ctx, R.color.brand_purple), 0x66) else UiKit.color(ctx, R.color.surface_elevated))
