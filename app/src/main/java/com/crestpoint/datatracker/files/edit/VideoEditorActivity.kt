@@ -1,5 +1,6 @@
-import com.google.common.collect.ImmutableList
 package com.crestpoint.datatracker.files.edit
+
+import com.google.common.collect.ImmutableList
 
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
@@ -196,10 +197,10 @@ class VideoEditorActivity : AppCompatActivity() {
     private var outPath = ""
     private val h = Handler(Looper.getMainLooper())
     private val previewRun = Runnable { applyPreview() }
-    private val crops = listOf("Original" to 0f, "1:1" to 1f, "16:9" to 16f / 9f, "9:16" to 9f / 16f, "4:3" to 4f / 3f, "3:4" to 3f / 4f, "21:9" to 21f / 9f)
-    private val filters = listOf("None", "B&W", "Warm", "Cool", "Invert")
-    private val sizes = listOf("Original" to 0, "1080p" to 1080, "720p" to 720, "480p" to 480)
-    private val tabs = listOf("Crop", "Adjust", "Filters", "Text", "Audio", "Output")
+    private val crops = ImmutableList.copyOf(listOf("Original" to 0f, "1:1" to 1f, "16:9" to 16f / 9f, "9:16" to 9f / 16f, "4:3" to 4f / 3f, "3:4" to 3f / 4f, "21:9" to 21f / 9f)
+    private val filters = ImmutableList.copyOf(listOf("None", "B&W", "Warm", "Cool", "Invert")
+    private val sizes = ImmutableList.copyOf(listOf("Original" to 0, "1080p" to 1080, "720p" to 720, "480p" to 480)
+    private val tabs = ImmutableList.copyOf(listOf("Crop", "Adjust", "Filters", "Text", "Audio", "Output")
     private val tick = object : Runnable {
         override fun run() { onTick(); h.postDelayed(this, 100) }
     }
