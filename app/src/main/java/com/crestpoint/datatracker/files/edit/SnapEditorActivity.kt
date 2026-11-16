@@ -37,6 +37,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.crestpoint.datatracker.R
 import com.crestpoint.datatracker.files.ui.Design
+import com.crestpoint.datatracker.files.ui.EditorKit
 import com.crestpoint.datatracker.files.ui.Glass
 import com.crestpoint.datatracker.files.ui.PathIcon
 import com.crestpoint.datatracker.files.ui.UiKit
@@ -292,7 +293,7 @@ class SnapEditorActivity : AppCompatActivity() {
     private var sel = 0
     private var accX = 0f
     private var accY = 0f
-    private var seekRef: SeekBar? = null
+    private var seekRef: com.google.android.material.slider.Slider? = null
     private var lookIdx = 0
     private var lookK = 100
     private var aspectIdx = 0
@@ -493,20 +494,21 @@ class SnapEditorActivity : AppCompatActivity() {
     private fun tile(label: String, icon: String, onClick: () -> Unit): View {
         val box = LinearLayout(this)
         box.orientation = LinearLayout.VERTICAL
-        box.gravity = Gravity.CENTER
-        box.background = Glass.pill(0xFF1A1B2E.toInt(), 16, this)
-        val pad = UiKit.dp(this, 12)
-        box.setPadding(pad, pad, pad, pad)
+        box.gravity = Gravity.CENTER_HORIZONTAL
+        val badge = FrameLayout(this)
+        badge.background = Glass.pill(0xFF23243B.toInt(), 18, this)
         val iv = ImageView(this)
         iv.setImageDrawable(PathIcon(icon, Color.WHITE))
-        box.addView(iv, LinearLayout.LayoutParams(UiKit.dp(this, 30), UiKit.dp(this, 30)))
-        val t = UiKit.text(this, label, 12f, R.color.on_surface_muted)
+        badge.addView(iv, FrameLayout.LayoutParams(UiKit.dp(this, 26), UiKit.dp(this, 26), Gravity.CENTER))
+        box.addView(badge, LinearLayout.LayoutParams(UiKit.dp(this, 54), UiKit.dp(this, 54)))
+        val t = UiKit.text(this, label, 11f, R.color.on_surface_muted)
         t.gravity = Gravity.CENTER
+        t.setPadding(0, UiKit.dp(this, 6), 0, 0)
         box.addView(t)
         box.setOnClickListener { onClick() }
         Design.ripple(box)
-        val lp = LinearLayout.LayoutParams(UiKit.dp(this, 78), UiKit.dp(this, 84))
-        lp.setMargins(UiKit.dp(this, 5), 0, UiKit.dp(this, 5), 0)
+        val lp = LinearLayout.LayoutParams(UiKit.dp(this, 68), -2)
+        lp.setMargins(UiKit.dp(this, 4), 0, UiKit.dp(this, 4), 0)
         box.layoutParams = lp
         return box
     }
@@ -562,12 +564,12 @@ class SnapEditorActivity : AppCompatActivity() {
             Tool.TUNE -> paramPanel(box, listOf(0, 1, 2, 3, 4, 5))
             Tool.DETAILS -> paramPanel(box, listOf(6, 7))
             Tool.CROP -> {
-                val rs = aspects.mapIndexed { i, a -> Design.chip(this, a.first, i == aspectIdx) { aspectIdx = i; view.setAspectRatio(a.second); buildPanel() } }
+                val rs = aspects.mapIndexed { i, a -> EditorKit.opt(this, a.first, i == aspectIdx) { aspectIdx = i; view.setAspectRatio(a.second); buildPanel() } }
                 box.addView(chipRow(*rs.toTypedArray()))
                 box.addView(chipRow(
-                    Design.chip(this, "Rotate", false) { transformBase(Matrix().apply { postRotate(90f) }) },
-                    Design.chip(this, "Flip H", false) { transformBase(Matrix().apply { postScale(-1f, 1f) }) },
-                    Design.chip(this, "Flip V", false) { transformBase(Matrix().apply { postScale(1f, -1f) }) }
+                    EditorKit.opt(this, "Rotate", false) { transformBase(Matrix().apply { postRotate(90f) }) },
+                    EditorKit.opt(this, "Flip H", false) { transformBase(Matrix().apply { postScale(-1f, 1f) }) },
+                    EditorKit.opt(this, "Flip V", false) { transformBase(Matrix().apply { postScale(1f, -1f) }) }
                 ))
                 box.addView(hint("Drag the corners or the box"))
             }
@@ -590,45 +592,24 @@ class SnapEditorActivity : AppCompatActivity() {
         return hs
     }
 
-    private fun seekRow(label: String, min: Int, max: Int, init: Int, onChange: (Int) -> Unit): LinearLayout {
-        val row = LinearLayout(this)
-        row.gravity = Gravity.CENTER_VERTICAL
-        val t = UiKit.text(this, "$label $init", 13f, R.color.on_surface_muted)
-        row.addView(t, UiKit.lp(UiKit.dp(this, 118), -2))
-        val sb = SeekBar(this)
-        sb.max = max - min
-        sb.progress = init - min
-        sb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(s: SeekBar?, pr: Int, u: Boolean) { t.text = "$label ${pr + min}"; onChange(pr + min) }
-            override fun onStartTrackingTouch(s: SeekBar?) {}
-            override fun onStopTrackingTouch(s: SeekBar?) {}
-        })
-        row.addView(sb, UiKit.lp(0, -2, 1f))
-        return row
-    }
+    private fun seekRow(label: String, min: Int, max: Int, init: Int, onChange: (Int) -> Unit): LinearLayout =
+        EditorKit.slider(this, label, min, max, init, onChange)
 
     // ---- Tune / Details: parameter chips + slider + swipe gestures
     private fun paramPanel(box: LinearLayout, ids: List<Int>) {
-        val chips = ids.map { id -> Design.chip(this, names[id] + if (p[id] != 0) " •" else "", id == sel) { sel = id; buildPanel() } }
+        val chips = ids.map { id -> EditorKit.opt(this, names[id] + if (p[id] != 0) " •" else "", id == sel) { sel = id; buildPanel() } }
         box.addView(chipRow(*chips.toTypedArray()))
         val lo = if (sel == 5 || sel == 6 || sel == 7) 0 else -100
         val row = LinearLayout(this)
         row.gravity = Gravity.CENTER_VERTICAL
         val t = UiKit.text(this, "${names[sel]} ${p[sel]}", 13f, R.color.on_surface_muted)
         row.addView(t, UiKit.lp(UiKit.dp(this, 130), -2))
-        val sb = SeekBar(this)
-        sb.max = 100 - lo
-        sb.progress = p[sel] - lo
+        val sb = EditorKit.styledSlider(this, lo, 100, p[sel]) { v ->
+            p[sel] = v
+            t.text = "${names[sel]} $v"
+            livePreview()
+        }
         seekRef = sb
-        sb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(s: SeekBar?, pr: Int, u: Boolean) {
-                p[sel] = pr + lo
-                t.text = "${names[sel]} ${p[sel]}"
-                livePreview()
-            }
-            override fun onStartTrackingTouch(s: SeekBar?) {}
-            override fun onStopTrackingTouch(s: SeekBar?) {}
-        })
         row.addView(sb, UiKit.lp(0, -2, 1f))
         box.addView(row)
         box.addView(hint("Tip: swipe up/down on the photo to pick a setting, left/right to change it"))
@@ -651,7 +632,7 @@ class SnapEditorActivity : AppCompatActivity() {
             val step = (accX / (view.width / 120f)).toInt()
             if (step != 0) {
                 accX -= step * (view.width / 120f)
-                seekRef?.let { sb -> sb.progress = (sb.progress + step).coerceIn(0, sb.max) }
+                seekRef?.let { sb -> sb.value = (sb.value + step).coerceIn(sb.valueFrom, sb.valueTo) }
                 showHud("${names[sel]} ${p[sel]}")
             }
         }
@@ -781,10 +762,10 @@ class SnapEditorActivity : AppCompatActivity() {
 
     private fun brushPanel(box: LinearLayout) {
         box.addView(chipRow(
-            Design.chip(this, "Paint", !erase) { erase = false; buildPanel() },
-            Design.chip(this, "Erase", erase) { erase = true; buildPanel() },
-            Design.chip(this, "Show mask", view.showMask) { view.showMask = !view.showMask; view.invalidate(); buildPanel() },
-            Design.chip(this, "Clear", false) { maskCanvas?.drawColor(0, PorterDuff.Mode.CLEAR); view.invalidate() }
+            EditorKit.opt(this, "Paint", !erase) { erase = false; buildPanel() },
+            EditorKit.opt(this, "Erase", erase) { erase = true; buildPanel() },
+            EditorKit.opt(this, "Show mask", view.showMask) { view.showMask = !view.showMask; view.invalidate(); buildPanel() },
+            EditorKit.opt(this, "Clear", false) { maskCanvas?.drawColor(0, PorterDuff.Mode.CLEAR); view.invalidate() }
         ))
         box.addView(seekRow("Exposure", -100, 100, brushExp) { brushExp = it; updateBrushFilter() })
         box.addView(seekRow("Saturation", -100, 100, brushSat) { brushSat = it; updateBrushFilter() })
@@ -811,8 +792,8 @@ class SnapEditorActivity : AppCompatActivity() {
 
     // ---- Text
     private fun textPanel(box: LinearLayout) {
-        val cs = textColors.mapIndexed { i, c -> Design.chip(this, c.first, i == textColorIdx) { textColorIdx = i; view.textColor = c.second; view.invalidate(); buildPanel() } }
-        box.addView(chipRow(Design.chip(this, if (view.text.isEmpty()) "Add text" else "Edit text", view.text.isNotEmpty()) { askText() }, *cs.toTypedArray()))
+        val cs = textColors.mapIndexed { i, c -> EditorKit.opt(this, c.first, i == textColorIdx) { textColorIdx = i; view.textColor = c.second; view.invalidate(); buildPanel() } }
+        box.addView(chipRow(EditorKit.opt(this, if (view.text.isEmpty()) "Add text" else "Edit text", view.text.isNotEmpty()) { askText() }, *cs.toTypedArray()))
         box.addView(seekRow("Size", 2, 20, (view.textSize * 100).toInt()) { view.textSize = it / 100f; view.invalidate() })
         box.addView(hint("Drag the text on the photo to place it"))
     }

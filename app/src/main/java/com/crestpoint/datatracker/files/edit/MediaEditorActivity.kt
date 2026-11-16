@@ -1,5 +1,13 @@
 package com.crestpoint.datatracker.files.edit
 
+import android.content.res.ColorStateList
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
+import android.media.MediaCodec
+import android.media.MediaExtractor
+import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.media.MediaScannerConnection
 import android.net.Uri
@@ -7,27 +15,22 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
-import android.widget.HorizontalScrollView
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
-import android.widget.SeekBar
 import android.widget.TextView
-import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.media3.common.Effect
+import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.common.audio.ChannelMixingAudioProcessor
 import androidx.media3.common.audio.ChannelMixingMatrix
-import androidx.media3.effect.Brightness
-import androidx.media3.effect.Contrast
-import androidx.media3.effect.Crop
-import androidx.media3.effect.Presentation
-import androidx.media3.effect.RgbFilter
-import androidx.media3.effect.ScaleAndRotateTransformation
+import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.Effects
@@ -37,306 +40,440 @@ import androidx.media3.transformer.ProgressHolder
 import androidx.media3.transformer.Transformer
 import com.crestpoint.datatracker.R
 import com.crestpoint.datatracker.files.ui.Design
+import com.crestpoint.datatracker.files.ui.EditorKit
+import com.crestpoint.datatracker.files.ui.Glass
+import com.crestpoint.datatracker.files.ui.PathIcon
+import com.crestpoint.datatracker.files.ui.Tokens
 import com.crestpoint.datatracker.files.ui.UiKit
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.slider.RangeSlider
 import java.io.File
+import java.nio.ByteOrder
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
-/** Video editor (trim, crop, rotate, mute) and audio editor (trim, volume). Saves a copy. */
+/** Waveform with two trim handles and a playhead. Positions are fractions 0..1. */
+class WaveView(ctx: android.content.Context) : View(ctx) {
+    var peaks: FloatArray? = null
+        set(v) { field = v; invalidate() }
+    var start = 0f
+    var end = 1f
+    var head = 0f
+        set(v) { field = v; invalidate() }
+    var minGap = 0.02f
+    var onTrim: (() -> Unit)? = null
+    var onSeek: ((Float) -> Unit)? = null
+
+    private val d = resources.displayMetrics.density
+    private val hw = 16f * d
+    private val accent = ContextCompat.getColor(ctx, R.color.brand_purple)
+    private val bar = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFB9A9FF.toInt(); strokeCap = Paint.Cap.ROUND }
+    private val barOff = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x44FFFFFF; strokeCap = Paint.Cap.ROUND }
+    private val frame = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = accent; style = Paint.Style.STROKE; strokeWidth = 3f * d }
+    private val handle = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = accent }
+    private val grip = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; strokeWidth = 2f * d; strokeCap = Paint.Cap.ROUND }
+    private val headP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+    private var drag = 0
+
+    private fun tx(f: Float) = hw + f * (width - 2 * hw)
+    private fun fx(x: Float) = ((x - hw) / (width - 2 * hw)).coerceIn(0f, 1f)
+
+    override fun onDraw(c: Canvas) {
+        val hgt = height.toFloat()
+        val l = hw
+        val r = width - hw
+        val p = peaks
+        val n = p?.size ?: 80
+        val slot = (r - l) / n
+        bar.strokeWidth = max(2f * d, slot * 0.55f)
+        barOff.strokeWidth = bar.strokeWidth
+        val xs = tx(start)
+        val xe = tx(end)
+        for (i in 0 until n) {
+            val v = if (p != null) p[i] else 0.15f
+            val h = max(4f * d, v * (hgt - 16f * d))
+            val x = l + slot * (i + 0.5f)
+            val paint = if (x in xs..xe) bar else barOff
+            c.drawLine(x, hgt / 2f - h / 2f, x, hgt / 2f + h / 2f, paint)
+        }
+        c.drawRoundRect(RectF(xs, 1.5f * d, xe, hgt - 1.5f * d), 8f * d, 8f * d, frame)
+        c.drawRoundRect(RectF(xs - hw, 0f, xs, hgt), 8f * d, 8f * d, handle)
+        c.drawRoundRect(RectF(xe, 0f, xe + hw, hgt), 8f * d, 8f * d, handle)
+        val gy = hgt / 2f
+        c.drawLine(xs - hw / 2f, gy - 8f * d, xs - hw / 2f, gy + 8f * d, grip)
+        c.drawLine(xe + hw / 2f, gy - 8f * d, xe + hw / 2f, gy + 8f * d, grip)
+        val hx = tx(head.coerceIn(start, end))
+        c.drawRoundRect(RectF(hx - 1.5f * d, 0f, hx + 1.5f * d, hgt), 2f * d, 2f * d, headP)
+    }
+
+    override fun onTouchEvent(e: MotionEvent): Boolean {
+        when (e.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                val grab = 30f * d
+                drag = if (abs(e.x - (tx(start) - hw / 2f)) < grab) 1 else if (abs(e.x - (tx(end) + hw / 2f)) < grab) 2 else 3
+                parent?.requestDisallowInterceptTouchEvent(true)
+                move(e.x)
+            }
+            MotionEvent.ACTION_MOVE -> move(e.x)
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> drag = 0
+        }
+        return true
+    }
+
+    private fun move(x: Float) {
+        when (drag) {
+            1 -> { start = min(fx(x + hw / 2f), end - minGap).coerceAtLeast(0f); head = start; onTrim?.invoke(); onSeek?.invoke(start) }
+            2 -> { end = max(fx(x - hw / 2f), start + minGap).coerceAtMost(1f); head = end; onTrim?.invoke(); onSeek?.invoke(end) }
+            3 -> { head = fx(x).coerceIn(start, end); onSeek?.invoke(head) }
+        }
+        invalidate()
+    }
+}
+
+private fun afmt(ms: Long): String {
+    val s = max(0L, ms) / 1000
+    return "%d:%02d".format(s / 60, s % 60)
+}
+
+/** Audio editor: waveform trim, volume, instant preview, export as .m4a. */
 class MediaEditorActivity : AppCompatActivity() {
     private lateinit var src: File
-    private var isVideo = true
-    private var durMs = 0L
-    private var vw = 0
-    private var vh = 0
-    private lateinit var video: VideoView
-    private lateinit var range: RangeSlider
-    private lateinit var info: TextView
-    private lateinit var status: TextView
-    private lateinit var bar: ProgressBar
-    private lateinit var exportBtn: MaterialButton
-    private lateinit var playBtn: MaterialButton
-    private lateinit var cropRow: LinearLayout
-    private lateinit var optRow: LinearLayout
-    private var cropIdx = 0
-    private var rot = 0
-    private var mute = false
+    private var dur = 0L
+    private var player: ExoPlayer? = null
+    private lateinit var wave: WaveView
+    private lateinit var tStart: TextView
+    private lateinit var tHead: TextView
+    private lateinit var tEnd: TextView
+    private lateinit var playBtn: ImageView
+    private lateinit var overlay: FrameLayout
+    private lateinit var overlayText: TextView
+    private lateinit var overlayBar: ProgressBar
     private var vol = 100
     private var transformer: Transformer? = null
-    private var bw = false
-    private var flip = false
-    private var audioOnly = false
-    private var bright = 0
-    private var contrast = 0
-    private var sizeIdx = 0
-    private lateinit var sizeRow: LinearLayout
-    private val sizes = listOf("Original" to 0, "1080p" to 1080, "720p" to 720, "480p" to 480)
     private var exporting = false
+    private var outPath = ""
     private val h = Handler(Looper.getMainLooper())
-    private val crops = listOf("Original" to 0f, "1:1" to 1f, "16:9" to 16f / 9f, "9:16" to 9f / 16f, "4:3" to 4f / 3f, "3:4" to 3f / 4f)
+    private val tick = object : Runnable {
+        override fun run() { onTick(); h.postDelayed(this, 100) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         src = File(intent.getStringExtra("path") ?: run { finish(); return })
-        isVideo = com.crestpoint.datatracker.files.FileKinds.of(src) == com.crestpoint.datatracker.files.FileKind.VIDEO
-
         val mr = MediaMetadataRetriever()
         try {
             mr.setDataSource(src.path)
-            durMs = mr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
-            vw = mr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 0
-            vh = mr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 0
-            val rt = mr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull() ?: 0
-            if (rt == 90 || rt == 270) { val t = vw; vw = vh; vh = t }
+            dur = mr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
         } catch (_: Exception) {
         } finally {
             try { mr.release() } catch (_: Exception) {}
         }
-        if (durMs < 1000L) { UiKit.toast(this, "Cannot read this file"); finish(); return }
+        if (dur < 1000L) { UiKit.toast(this, "Cannot read this audio"); finish(); return }
 
+        val accent = UiKit.color(this, R.color.brand_purple)
+        val outer = FrameLayout(this)
+        outer.setBackgroundColor(0xFF0B0B14.toInt())
         val col = LinearLayout(this)
         col.orientation = LinearLayout.VERTICAL
-        col.setPadding(UiKit.dp(this, 12), UiKit.dp(this, 32), UiKit.dp(this, 12), UiKit.dp(this, 16))
+        col.setPadding(UiKit.dp(this, 12), UiKit.dp(this, 26), UiKit.dp(this, 12), UiKit.dp(this, 12))
 
         val top = LinearLayout(this)
         top.gravity = Gravity.CENTER_VERTICAL
-        val name = UiKit.text(this, (if (isVideo) "Video editor · " else "Audio editor · ") + src.name, 15f, bold = true)
-        name.maxLines = 1
-        name.ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
-        top.addView(name, UiKit.lp(0, -2, 1f))
-        top.addView(UiKit.iconBtn(this, "✕") { finish() })
+        top.addView(Glass.iconBtn(this, Glass.CLOSE) { finish() })
+        top.addView(UiKit.text(this, "Audio editor", 16f, bold = true), UiKit.lp(0, -2, 1f))
+        val ex = UiKit.button(this, "Export") { export() }
+        ex.backgroundTintList = ColorStateList.valueOf(accent)
+        top.addView(ex)
         col.addView(top)
 
-        video = VideoView(this)
-        video.setVideoPath(src.path)
-        video.setOnPreparedListener { video.seekTo(1) }
-        video.setOnErrorListener { _, _, _ -> true }
-        col.addView(video, UiKit.lp(-1, UiKit.dp(this, if (isVideo) 240 else 90)))
+        // hero card: file + waveform + transport
+        val hero = LinearLayout(this)
+        hero.orientation = LinearLayout.VERTICAL
+        hero.background = Tokens.cardBg(this, 22)
+        hero.setPadding(UiKit.dp(this, 12), UiKit.dp(this, 14), UiKit.dp(this, 12), UiKit.dp(this, 14))
+        val info = LinearLayout(this)
+        info.gravity = Gravity.CENTER_VERTICAL
+        val badge = FrameLayout(this)
+        badge.background = Glass.pill(0x337657F6, 16, this)
+        val note = ImageView(this)
+        note.setImageDrawable(PathIcon("M12,3v10.55c-0.59,-0.34 -1.27,-0.55 -2,-0.55 -2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V7h4V3h-6z", accent))
+        badge.addView(note, FrameLayout.LayoutParams(UiKit.dp(this, 26), UiKit.dp(this, 26), Gravity.CENTER))
+        info.addView(badge, LinearLayout.LayoutParams(UiKit.dp(this, 52), UiKit.dp(this, 52)))
+        val names = LinearLayout(this)
+        names.orientation = LinearLayout.VERTICAL
+        names.setPadding(UiKit.dp(this, 12), 0, 0, 0)
+        val nm = UiKit.text(this, src.nameWithoutExtension, 15f, bold = true)
+        nm.maxLines = 1
+        nm.ellipsize = android.text.TextUtils.TruncateAt.END
+        names.addView(nm)
+        names.addView(UiKit.text(this, src.extension.uppercase() + "  ·  " + afmt(dur), 12f, R.color.on_surface_muted))
+        info.addView(names, UiKit.lp(0, -2, 1f))
+        hero.addView(info)
 
-        playBtn = UiKit.button(this, "Play preview", true) { togglePlay() }
-        col.addView(playBtn)
+        wave = WaveView(this)
+        wave.minGap = max(0.01f, 500f / dur)
+        wave.onTrim = { updateLabels() }
+        wave.onSeek = { f -> player?.seekTo((f * dur).toLong()) }
+        val wl = LinearLayout.LayoutParams(-1, UiKit.dp(this, 120))
+        wl.setMargins(0, UiKit.dp(this, 14), 0, UiKit.dp(this, 6))
+        hero.addView(wave, wl)
 
-        info = UiKit.text(this, "", 13f, R.color.on_surface_muted)
-        col.addView(info)
-        range = RangeSlider(this)
-        range.valueFrom = 0f
-        range.valueTo = durMs / 1000f
-        range.values = listOf(0f, durMs / 1000f)
-        range.addOnChangeListener { _, _, fromUser ->
-            updateInfo()
-            if (fromUser) video.seekTo((range.values[0] * 1000).toInt())
-        }
-        col.addView(range)
-        updateInfo()
+        val times = LinearLayout(this)
+        tStart = UiKit.text(this, "0:00", 12f, R.color.on_surface_muted)
+        tHead = UiKit.text(this, "0:00", 12f, bold = true)
+        tEnd = UiKit.text(this, afmt(dur), 12f, R.color.on_surface_muted)
+        tHead.gravity = Gravity.CENTER
+        tEnd.gravity = Gravity.END
+        times.addView(tStart, UiKit.lp(0, -2, 1f))
+        times.addView(tHead, UiKit.lp(0, -2, 1f))
+        times.addView(tEnd, UiKit.lp(0, -2, 1f))
+        hero.addView(times)
 
-        if (isVideo) {
-            col.addView(UiKit.text(this, "Crop", 13f, R.color.on_surface_muted))
-            cropRow = LinearLayout(this)
-            val hs = HorizontalScrollView(this)
-            hs.isHorizontalScrollBarEnabled = false
-            hs.addView(cropRow)
-            col.addView(hs)
-            optRow = LinearLayout(this)
-            col.addView(optRow)
-            buildCropRow(); buildOptRow()
-            col.addView(UiKit.text(this, "Size (smaller = smaller file)", 13f, R.color.on_surface_muted))
-            sizeRow = LinearLayout(this)
-            buildSizeRow()
-            val shs = HorizontalScrollView(this)
-            shs.isHorizontalScrollBarEnabled = false
-            shs.addView(sizeRow)
-            col.addView(shs)
-            col.addView(seek("Brightness", -50, 50, 0) { bright = it })
-            col.addView(seek("Contrast", -50, 50, 0) { contrast = it })
-        } else {
-            val t = UiKit.text(this, "Volume 100%", 13f, R.color.on_surface_muted)
-            col.addView(t)
-            val sb = SeekBar(this)
-            sb.max = 200
-            sb.progress = 100
-            sb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-                override fun onProgressChanged(s: SeekBar?, p: Int, u: Boolean) { vol = p; t.text = "Volume $p%" }
-                override fun onStartTrackingTouch(s: SeekBar?) {}
-                override fun onStopTrackingTouch(s: SeekBar?) {}
-            })
-            col.addView(sb)
-        }
+        val transport = LinearLayout(this)
+        transport.gravity = Gravity.CENTER
+        playBtn = ImageView(this)
+        val pp = UiKit.dp(this, 16)
+        playBtn.setPadding(pp, pp, pp, pp)
+        playBtn.background = Glass.circle(accent)
+        playBtn.setOnClickListener { togglePlay() }
+        val tl = LinearLayout.LayoutParams(UiKit.dp(this, 64), UiKit.dp(this, 64))
+        tl.topMargin = UiKit.dp(this, 10)
+        transport.addView(playBtn, tl)
+        hero.addView(transport)
+        col.addView(hero, LinearLayout.LayoutParams(-1, -2).apply { topMargin = UiKit.dp(this@MediaEditorActivity, 10) })
 
-        bar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal)
-        bar.max = 100
-        bar.visibility = View.GONE
-        col.addView(bar)
-        status = UiKit.text(this, "Drag the handles to choose the part to keep.", 12f, R.color.on_surface_muted)
-        col.addView(status)
-        exportBtn = UiKit.button(this, "Save edited copy") { export() }
-        col.addView(exportBtn)
+        // controls card
+        val ctl = LinearLayout(this)
+        ctl.orientation = LinearLayout.VERTICAL
+        ctl.background = Tokens.cardBg(this, 22)
+        ctl.setPadding(UiKit.dp(this, 14), UiKit.dp(this, 12), UiKit.dp(this, 14), UiKit.dp(this, 12))
+        ctl.addView(EditorKit.slider(this, "Volume %", 0, 200, 100) { vol = it; player?.volume = min(1f, vol / 100f) })
+        ctl.addView(UiKit.text(this, "Drag the purple handles to keep only the part you want. Saved as a new .m4a file next to the original.", 12f, R.color.on_surface_muted)
+            .also { it.setPadding(0, UiKit.dp(this, 8), 0, 0) })
+        col.addView(ctl, LinearLayout.LayoutParams(-1, -2).apply { topMargin = UiKit.dp(this@MediaEditorActivity, 10) })
 
         val sv = ScrollView(this)
-        sv.setBackgroundColor(UiKit.color(this, R.color.surface))
+        sv.isVerticalScrollBarEnabled = false
         sv.addView(col)
-        setContentView(sv)
+        outer.addView(sv, FrameLayout.LayoutParams(-1, -1))
+
+        overlay = FrameLayout(this)
+        overlay.setBackgroundColor(0xE6000000.toInt())
+        overlay.visibility = View.GONE
+        overlay.isClickable = true
+        val card = LinearLayout(this)
+        card.orientation = LinearLayout.VERTICAL
+        card.gravity = Gravity.CENTER
+        card.setPadding(UiKit.dp(this, 24), UiKit.dp(this, 24), UiKit.dp(this, 24), UiKit.dp(this, 24))
+        overlayText = UiKit.text(this, "Exporting…", 16f, bold = true)
+        overlayBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal)
+        overlayBar.max = 100
+        card.addView(overlayText)
+        card.addView(overlayBar, UiKit.lp(UiKit.dp(this, 240), -2))
+        card.addView(UiKit.button(this, "Cancel", true) { cancelExport() })
+        overlay.addView(card, FrameLayout.LayoutParams(-2, -2, Gravity.CENTER))
+        outer.addView(overlay, FrameLayout.LayoutParams(-1, -1))
+        setContentView(outer)
+
+        val p = ExoPlayer.Builder(this).build()
+        player = p
+        p.setMediaItem(MediaItem.fromUri(Uri.fromFile(src)))
+        p.prepare()
+        p.playWhenReady = false
+        updatePlayIcon()
+        updateLabels()
+        Thread {
+            val peaks = computePeaks(src.path, 80)
+            runOnUiThread { if (!isDestroyed) wave.peaks = peaks }
+        }.start()
         h.post(tick)
     }
 
-    private val tick = object : Runnable {
-        override fun run() {
-            try {
-                val end = (range.values[1] * 1000).toInt()
-                if (video.isPlaying && video.currentPosition >= end) {
-                    video.pause(); video.seekTo((range.values[0] * 1000).toInt()); playBtn.text = "Play preview"
-                }
-            } catch (_: Exception) {}
-            h.postDelayed(this, 200)
+    private fun onTick() {
+        val p = player ?: return
+        val pos = p.currentPosition
+        val s = (wave.start * dur).toLong()
+        val e = (wave.end * dur).toLong()
+        if (p.isPlaying) {
+            if (pos >= e) { p.pause(); p.seekTo(s) }
+            else if (pos < s - 300) p.seekTo(s)
         }
+        wave.head = pos.toFloat() / dur
+        tHead.text = afmt(pos)
+        updatePlayIcon()
+    }
+
+    private fun updateLabels() {
+        tStart.text = afmt((wave.start * dur).toLong())
+        tEnd.text = afmt((wave.end * dur).toLong()) + "  (" + afmt(((wave.end - wave.start) * dur).toLong()) + ")"
     }
 
     private fun togglePlay() {
-        if (video.isPlaying) { video.pause(); playBtn.text = "Play preview"; return }
-        val s = (range.values[0] * 1000).toInt()
-        val p = video.currentPosition
-        if (p < s || p >= (range.values[1] * 1000).toInt() - 100) video.seekTo(s)
-        video.start(); playBtn.text = "Pause"
+        val p = player ?: return
+        if (p.isPlaying) { p.pause(); return }
+        val s = (wave.start * dur).toLong()
+        val e = (wave.end * dur).toLong()
+        if (p.currentPosition < s || p.currentPosition >= e - 100) p.seekTo(s)
+        p.play()
     }
 
-    private fun fmt(sec: Float): String {
-        val t = sec.toInt()
-        return "%d:%02d".format(t / 60, t % 60)
+    private fun updatePlayIcon() {
+        val playing = player?.isPlaying == true
+        playBtn.setImageDrawable(PathIcon(if (playing) Glass.PAUSE else Glass.PLAY, Color.WHITE))
     }
 
-    private fun updateInfo() {
-        val a = range.values[0]; val b = range.values[1]
-        info.text = "Start ${fmt(a)}  ·  End ${fmt(b)}  ·  Length ${fmt(b - a)}"
-    }
-
-    private fun buildCropRow() {
-        cropRow.removeAllViews()
-        crops.forEachIndexed { i, (label, _) ->
-            cropRow.addView(Design.chip(this, label, i == cropIdx) { cropIdx = i; buildCropRow() })
-        }
-    }
-
-    private fun buildOptRow() {
-        optRow.removeAllViews()
-        optRow.addView(Design.chip(this, "⟳ Rotate ${rot}°", rot != 0) { rot = (rot + 90) % 360; buildOptRow() })
-        optRow.addView(Design.chip(this, if (mute) "Sound: off" else "Sound: on", mute) { mute = !mute; buildOptRow() })
-        optRow.addView(Design.chip(this, "B&W", bw) { bw = !bw; buildOptRow() })
-        optRow.addView(Design.chip(this, "Flip", flip) { flip = !flip; buildOptRow() })
-        optRow.addView(Design.chip(this, "Audio only", audioOnly) { audioOnly = !audioOnly; buildOptRow() })
-    }
-
-    private fun export() {
-        if (exporting) return
-        val s = (range.values[0] * 1000).toLong()
-        val e = (range.values[1] * 1000).toLong()
-        if (e - s < 500L) { UiKit.toast(this, "Keep at least half a second"); return }
-        video.pause(); playBtn.text = "Play preview"
-
-        val vid = isVideo && !audioOnly
-        val clip = MediaItem.ClippingConfiguration.Builder().setStartPositionMs(s).setEndPositionMs(e).build()
-        val item = MediaItem.Builder().setUri(Uri.fromFile(src)).setClippingConfiguration(clip).build()
-        val videoFx = ArrayList<Effect>()
-        val audioFx = ArrayList<AudioProcessor>()
-        if (vid) {
-            val ratio = crops[cropIdx].second
-            if (ratio > 0f && vw > 0 && vh > 0) {
-                val frame = vw.toFloat() / vh.toFloat()
-                if (ratio < frame) {
-                    val x = ratio / frame
-                    videoFx.add(Crop(-x, x, -1f, 1f))
-                } else {
-                    val y = frame / ratio
-                    videoFx.add(Crop(-1f, 1f, -y, y))
+    /** Decodes the audio and keeps the loudest value for each of [buckets] slices. Returns null if it cannot decode. */
+    private fun computePeaks(path: String, buckets: Int): FloatArray? {
+        val ex = MediaExtractor()
+        try {
+            ex.setDataSource(path)
+            var track = -1
+            for (i in 0 until ex.trackCount) {
+                val mime = ex.getTrackFormat(i).getString(MediaFormat.KEY_MIME) ?: ""
+                if (mime.startsWith("audio/")) { track = i; break }
+            }
+            if (track < 0) return null
+            ex.selectTrack(track)
+            val fmt = ex.getTrackFormat(track)
+            val mime = fmt.getString(MediaFormat.KEY_MIME) ?: return null
+            val durUs = if (fmt.containsKey(MediaFormat.KEY_DURATION)) fmt.getLong(MediaFormat.KEY_DURATION) else dur * 1000L
+            if (durUs <= 0L) return null
+            val codec = MediaCodec.createDecoderByType(mime)
+            codec.configure(fmt, null, null, 0)
+            codec.start()
+            val peaks = FloatArray(buckets)
+            val info = MediaCodec.BufferInfo()
+            var inputDone = false
+            var outputDone = false
+            var guard = 0
+            while (!outputDone && guard < 400000 && !isDestroyed) {
+                guard++
+                if (!inputDone) {
+                    val ib = codec.dequeueInputBuffer(5000)
+                    if (ib >= 0) {
+                        val buf = codec.getInputBuffer(ib)
+                        val n = if (buf != null) ex.readSampleData(buf, 0) else -1
+                        if (n < 0) {
+                            codec.queueInputBuffer(ib, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                            inputDone = true
+                        } else {
+                            codec.queueInputBuffer(ib, 0, n, ex.sampleTime, 0)
+                            ex.advance()
+                        }
+                    }
+                }
+                val ob = codec.dequeueOutputBuffer(info, 5000)
+                if (ob >= 0) {
+                    if (info.size > 0) {
+                        val out = codec.getOutputBuffer(ob)
+                        if (out != null) {
+                            out.position(info.offset)
+                            out.limit(info.offset + info.size)
+                            val sb = out.order(ByteOrder.nativeOrder()).asShortBuffer()
+                            val bucket = ((info.presentationTimeUs.toDouble() / durUs) * buckets).toInt().coerceIn(0, buckets - 1)
+                            var m = 0
+                            var i = 0
+                            while (i < sb.limit()) {
+                                val v = abs(sb.get(i).toInt())
+                                if (v > m) m = v
+                                i += 8
+                            }
+                            val f = m / 32768f
+                            if (f > peaks[bucket]) peaks[bucket] = f
+                        }
+                    }
+                    codec.releaseOutputBuffer(ob, false)
+                    if ((info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) outputDone = true
                 }
             }
-            if (rot != 0) videoFx.add(ScaleAndRotateTransformation.Builder().setRotationDegrees(rot.toFloat()).build())
-            if (flip) videoFx.add(ScaleAndRotateTransformation.Builder().setScale(-1f, 1f).build())
-            if (bright != 0) videoFx.add(Brightness(bright / 100f))
-            if (contrast != 0) videoFx.add(Contrast(contrast / 100f))
-            if (bw) videoFx.add(RgbFilter.createGrayscaleFilter())
-            if (sizes[sizeIdx].second > 0) videoFx.add(Presentation.createForHeight(sizes[sizeIdx].second))
-        } else if (vol != 100) {
-            val v = vol / 100f
-            val p = ChannelMixingAudioProcessor()
-            p.putChannelMixingMatrix(ChannelMixingMatrix.create(1, 1).scaleBy(v))
-            p.putChannelMixingMatrix(ChannelMixingMatrix.create(2, 2).scaleBy(v))
-            audioFx.add(p)
+            codec.stop()
+            codec.release()
+            val top = peaks.max()
+            if (top <= 0f) return null
+            for (i in peaks.indices) peaks[i] = (peaks[i] / top).coerceIn(0.05f, 1f)
+            return peaks
+        } catch (_: Throwable) {
+            return null
+        } finally {
+            try { ex.release() } catch (_: Exception) {}
         }
-        val eb = EditedMediaItem.Builder(item).setEffects(Effects(audioFx, videoFx))
-        if (vid) eb.setRemoveAudio(mute) else eb.setRemoveVideo(true)
+    }
 
-        val out = Editors.outFile(src, if (vid) "mp4" else "m4a")
+    // ---------- export
+    private fun export() {
+        if (exporting) return
+        val s = (wave.start * dur).toLong()
+        val e = (wave.end * dur).toLong()
+        if (e - s < 500L) { UiKit.toast(this, "Keep at least half a second"); return }
+        player?.pause()
+        val clip = MediaItem.ClippingConfiguration.Builder().setStartPositionMs(s).setEndPositionMs(e).build()
+        val item = MediaItem.Builder().setUri(Uri.fromFile(src)).setClippingConfiguration(clip).build()
+        val audioFx = ArrayList<AudioProcessor>()
+        if (vol != 100) {
+            val v = vol / 100f
+            val ap = ChannelMixingAudioProcessor()
+            ap.putChannelMixingMatrix(ChannelMixingMatrix.create(1, 1).scaleBy(v))
+            ap.putChannelMixingMatrix(ChannelMixingMatrix.create(2, 2).scaleBy(v))
+            audioFx.add(ap)
+        }
+        val eb = EditedMediaItem.Builder(item).setEffects(Effects(audioFx, emptyList()))
+        eb.setRemoveVideo(true)
+        val out = Editors.outFile(src, "m4a")
         outPath = out.path
-        val tb = Transformer.Builder(this).setAudioMimeType(MimeTypes.AUDIO_AAC)
-        if (vid) tb.setVideoMimeType(MimeTypes.VIDEO_H264)
-        val t = tb.addListener(object : Transformer.Listener {
-            override fun onCompleted(composition: Composition, exportResult: ExportResult) { finishExport(null) }
-            override fun onError(composition: Composition, exportResult: ExportResult, exportException: ExportException) {
-                finishExport(exportException.message ?: "Export failed")
-            }
-        }).build()
+        val t = Transformer.Builder(this).setAudioMimeType(MimeTypes.AUDIO_AAC)
+            .addListener(object : Transformer.Listener {
+                override fun onCompleted(composition: Composition, exportResult: ExportResult) { finishExport(null) }
+                override fun onError(composition: Composition, exportResult: ExportResult, exportException: ExportException) {
+                    finishExport(exportException.message ?: "Export failed")
+                }
+            }).build()
         transformer = t
         exporting = true
-        exportBtn.isEnabled = false
-        bar.progress = 0
-        bar.visibility = View.VISIBLE
-        status.text = "Saving… keep this screen open"
+        overlay.visibility = View.VISIBLE
+        overlayBar.progress = 0
+        overlayText.text = "Exporting…"
         t.start(eb.build(), out.absolutePath)
         pollProgress()
-    }
-
-    private var outPath = ""
-
-    private fun buildSizeRow() {
-        sizeRow.removeAllViews()
-        sizes.forEachIndexed { i, (label, _) ->
-            sizeRow.addView(Design.chip(this, label, i == sizeIdx) { sizeIdx = i; buildSizeRow() })
-        }
-    }
-
-    private fun seek(label: String, min: Int, max: Int, init: Int, onChange: (Int) -> Unit): LinearLayout {
-        val row = LinearLayout(this)
-        row.gravity = Gravity.CENTER_VERTICAL
-        val t = UiKit.text(this, "$label $init", 13f, R.color.on_surface_muted)
-        row.addView(t, UiKit.lp(UiKit.dp(this, 130), -2))
-        val sb = SeekBar(this)
-        sb.max = max - min
-        sb.progress = init - min
-        sb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(s: SeekBar?, p: Int, u: Boolean) { t.text = "$label ${p + min}"; onChange(p + min) }
-            override fun onStartTrackingTouch(s: SeekBar?) {}
-            override fun onStopTrackingTouch(s: SeekBar?) {}
-        })
-        row.addView(sb, UiKit.lp(0, -2, 1f))
-        return row
     }
 
     private fun pollProgress() {
         val t = transformer ?: return
         if (!exporting) return
         val holder = ProgressHolder()
-        if (t.getProgress(holder) == Transformer.PROGRESS_STATE_AVAILABLE) bar.progress = holder.progress
-        h.postDelayed({ pollProgress() }, 500)
+        if (t.getProgress(holder) == Transformer.PROGRESS_STATE_AVAILABLE) {
+            overlayBar.progress = holder.progress
+            overlayText.text = "Exporting… ${holder.progress}%"
+        }
+        h.postDelayed({ pollProgress() }, 400)
+    }
+
+    private fun cancelExport() {
+        try { transformer?.cancel() } catch (_: Exception) {}
+        exporting = false
+        overlay.visibility = View.GONE
+        try { File(outPath).delete() } catch (_: Exception) {}
     }
 
     private fun finishExport(error: String?) {
+        if (!exporting) return
         exporting = false
-        exportBtn.isEnabled = true
-        bar.visibility = View.GONE
+        overlay.visibility = View.GONE
         if (error != null) {
             try { File(outPath).delete() } catch (_: Exception) {}
-            status.text = "Could not save: $error"
+            UiKit.toast(this, "Could not export: $error")
         } else {
             MediaScannerConnection.scanFile(this, arrayOf(outPath), null, null)
-            status.text = "Saved: " + File(outPath).name
             UiKit.toast(this, "Saved " + File(outPath).name)
+            finish()
         }
     }
 
-    override fun onPause() { super.onPause(); try { video.pause() } catch (_: Exception) {} }
+    override fun onStop() { super.onStop(); try { player?.pause() } catch (_: Exception) {} }
 
     override fun onDestroy() {
         h.removeCallbacksAndMessages(null)
         if (exporting) { try { transformer?.cancel() } catch (_: Exception) {}; try { File(outPath).delete() } catch (_: Exception) {} }
+        player?.release()
+        player = null
         super.onDestroy()
     }
 }

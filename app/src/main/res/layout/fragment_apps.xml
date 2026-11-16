@@ -15,14 +15,14 @@
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chip_today"
-            style="@style/Widget.Material3.Chip.Filter"
+            style="@style/Widget.App.Chip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/tab_today" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chip_week"
-            style="@style/Widget.Material3.Chip.Filter"
+            style="@style/Widget.App.Chip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
@@ -30,7 +30,7 @@
 
         <com.google.android.material.chip.Chip
             android:id="@+id/chip_month"
-            style="@style/Widget.Material3.Chip.Filter"
+            style="@style/Widget.App.Chip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/tab_30days" />

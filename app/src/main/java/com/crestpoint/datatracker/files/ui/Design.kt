@@ -40,6 +40,13 @@ object Design {
         val out = TypedValue()
         v.context.theme.resolveAttribute(android.R.attr.selectableItemBackground, out, true)
         if (out.resourceId != 0) v.foreground = ContextCompat.getDrawable(v.context, out.resourceId)
+        v.setOnTouchListener { view, e ->
+            when (e.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> view.animate().scaleX(0.96f).scaleY(0.96f).setDuration(90).start()
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> view.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
+            }
+            false
+        }
     }
 
     fun roundedOutline(v: View, radiusDp: Int) {
@@ -72,6 +79,7 @@ object Design {
 
     fun chip(ctx: Context, label: String, filled: Boolean, onClick: (() -> Unit)?): TextView {
         val t = UiKit.text(ctx, label, 13f, if (filled) R.color.on_surface else R.color.on_surface_muted, bold = filled)
+        Icons.setLabel(t, label)
         val g = GradientDrawable()
         g.cornerRadius = UiKit.dp(ctx, 20).toFloat()
         g.setColor(if (filled) Palette.withAlpha(UiKit.color(ctx, R.color.brand_purple), 0x66) else UiKit.color(ctx, R.color.surface_elevated))

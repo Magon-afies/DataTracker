@@ -60,6 +60,7 @@ import androidx.media3.transformer.Transformer
 import androidx.media3.ui.PlayerView
 import com.crestpoint.datatracker.R
 import com.crestpoint.datatracker.files.ui.Design
+import com.crestpoint.datatracker.files.ui.EditorKit
 import com.crestpoint.datatracker.files.ui.Glass
 import com.crestpoint.datatracker.files.ui.PathIcon
 import com.crestpoint.datatracker.files.ui.UiKit
@@ -277,7 +278,9 @@ class VideoEditorActivity : AppCompatActivity() {
         tabScroll.addView(tabRow)
         col.addView(tabScroll)
         panel = FrameLayout(this)
-        col.addView(panel, UiKit.lp(-1, UiKit.dp(this, 132)))
+        panel.background = com.crestpoint.datatracker.files.ui.Tokens.cardBg(this)
+        panel.setPadding(UiKit.dp(this, 8), UiKit.dp(this, 6), UiKit.dp(this, 8), UiKit.dp(this, 6))
+        col.addView(panel, UiKit.lp(-1, UiKit.dp(this, 150)))
         outer.addView(col, FrameLayout.LayoutParams(-1, -1))
 
         // export overlay
@@ -342,7 +345,7 @@ class VideoEditorActivity : AppCompatActivity() {
             sp.setSpan(BackgroundColorSpan(0x66000000), 0, sp.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             val y = when (textPos) { 0 -> 0.8f; 1 -> 0f; else -> -0.8f }
             val st = OverlaySettings.Builder().setBackgroundFrameAnchor(0f, y).build()
-            fx.add(OverlayEffect(listOf<TextureOverlay>(TextOverlay.createStaticTextOverlay(sp, st))))
+            fx.add(OverlayEffect(com.google.common.collect.ImmutableList.of<TextureOverlay>(TextOverlay.createStaticTextOverlay(sp, st))))
         }
         return fx
     }
@@ -414,9 +417,37 @@ class VideoEditorActivity : AppCompatActivity() {
     }
 
     // ---------- tabs and panels
+    private val tabIcons = listOf(
+        "M17,15h2V7c0,-1.1 -0.9,-2 -2,-2H9v2h8v8zM7,17V1H5v4H1v2h4v10c0,1.1 0.9,2 2,2h10v4h2v-4h4v-2H7z",
+        "M3,17v2h6v-2H3zM3,5v2h10V5H3zM13,21v-2h8v-2h-8v-2h-2v6h2zM7,9v2H3v2h4v2h2V9H7zM21,13v-2H11v2h10zM15,9h2V7h4V5h-4V3h-2v6z",
+        "M19,9l1.25,-2.75L23,5l-2.75,-1.25L19,1l-1.25,2.75L15,5l2.75,1.25L19,9zM19,15l-1.25,2.75L15,19l2.75,1.25L19,23l1.25,-2.75L23,19l-2.75,-1.25L19,15zM11.5,9.5L9,4 6.5,9.5 1,12l5.5,2.5L9,20l2.5,-5.5L17,12l-5.5,-2.5zM9.99,12.99L9,15.17l-0.99,-2.18L5.83,12l2.18,-0.99L9,8.83l0.99,2.18L12.17,12l-2.18,0.99z",
+        "M2.5,4v3h5v12h3V7h5V4h-13zM21.5,9h-9v3h3v7h3v-7h3V9z",
+        "M12,3v10.55c-0.59,-0.34 -1.27,-0.55 -2,-0.55 -2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4V7h4V3h-6z",
+        "M19,9h-4V3H9v6H5l7,7 7,-7zM5,18v2h14v-2H5z"
+    )
+
     private fun buildTabs() {
         tabRow.removeAllViews()
-        tabs.forEachIndexed { i, n -> tabRow.addView(Design.chip(this, n, i == tab) { tab = i; buildTabs(); buildPanel() }) }
+        val accent = UiKit.color(this, R.color.brand_purple)
+        tabs.forEachIndexed { i, n ->
+            val on = i == tab
+            val box = LinearLayout(this)
+            box.orientation = LinearLayout.VERTICAL
+            box.gravity = Gravity.CENTER
+            if (on) box.background = Glass.pill(0x337657F6, 14, this)
+            val iv = ImageView(this)
+            iv.setImageDrawable(PathIcon(tabIcons[i], if (on) accent else Color.WHITE))
+            box.addView(iv, LinearLayout.LayoutParams(UiKit.dp(this, 24), UiKit.dp(this, 24)))
+            val t = UiKit.text(this, n, 11f, if (on) R.color.on_surface else R.color.on_surface_muted, bold = on)
+            t.gravity = Gravity.CENTER
+            box.addView(t)
+            box.setPadding(UiKit.dp(this, 6), UiKit.dp(this, 8), UiKit.dp(this, 6), UiKit.dp(this, 8))
+            box.setOnClickListener { tab = i; buildTabs(); buildPanel() }
+            Design.ripple(box)
+            val lp = LinearLayout.LayoutParams(UiKit.dp(this, 64), -2)
+            lp.setMargins(UiKit.dp(this, 3), 0, UiKit.dp(this, 3), 0)
+            tabRow.addView(box, lp)
+        }
     }
 
     private fun chipRow(vararg chips: View): View {
@@ -428,22 +459,8 @@ class VideoEditorActivity : AppCompatActivity() {
         return hs
     }
 
-    private fun seek(label: String, min: Int, max: Int, init: Int, onChange: (Int) -> Unit): LinearLayout {
-        val row = LinearLayout(this)
-        row.gravity = Gravity.CENTER_VERTICAL
-        val t = UiKit.text(this, "$label $init", 13f, R.color.on_surface_muted)
-        row.addView(t, UiKit.lp(UiKit.dp(this, 120), -2))
-        val sb = SeekBar(this)
-        sb.max = max - min
-        sb.progress = init - min
-        sb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(s: SeekBar?, p: Int, u: Boolean) { t.text = "$label ${p + min}"; onChange(p + min); schedulePreview() }
-            override fun onStartTrackingTouch(s: SeekBar?) {}
-            override fun onStopTrackingTouch(s: SeekBar?) { applyPreview() }
-        })
-        row.addView(sb, UiKit.lp(0, -2, 1f))
-        return row
-    }
+    private fun seek(label: String, min: Int, max: Int, init: Int, onChange: (Int) -> Unit): LinearLayout =
+        EditorKit.slider(this, label, min, max, init) { onChange(it); schedulePreview() }
 
     private fun buildPanel() {
         panel.removeAllViews()
@@ -451,42 +468,42 @@ class VideoEditorActivity : AppCompatActivity() {
         box.orientation = LinearLayout.VERTICAL
         when (tab) {
             0 -> {
-                val rs = crops.mapIndexed { i, c -> Design.chip(this, c.first, i == cropIdx) { cropIdx = i; applyPreview(); buildPanel() } }
+                val rs = crops.mapIndexed { i, c -> EditorKit.opt(this, c.first, i == cropIdx) { cropIdx = i; applyPreview(); buildPanel() } }
                 box.addView(chipRow(*rs.toTypedArray()))
                 box.addView(chipRow(
-                    Design.chip(this, "Rotate ${rot}°", rot != 0) { rot = (rot + 90) % 360; applyPreview(); buildPanel() },
-                    Design.chip(this, "Flip", flip) { flip = !flip; applyPreview(); buildPanel() }
+                    EditorKit.opt(this, "Rotate ${rot}°", rot != 0) { rot = (rot + 90) % 360; applyPreview(); buildPanel() },
+                    EditorKit.opt(this, "Flip", flip) { flip = !flip; applyPreview(); buildPanel() }
                 ))
             }
             1 -> {
                 box.addView(seek("Brightness", -50, 50, bright) { bright = it })
                 box.addView(seek("Contrast", -50, 50, contrast) { contrast = it })
-                box.addView(chipRow(Design.chip(this, "Reset", false) { bright = 0; contrast = 0; applyPreview(); buildPanel() }))
+                box.addView(chipRow(EditorKit.opt(this, "Reset", false) { bright = 0; contrast = 0; applyPreview(); buildPanel() }))
             }
             2 -> {
-                val fs = filters.mapIndexed { i, n -> Design.chip(this, n, i == filterIdx) { filterIdx = i; applyPreview(); buildPanel() } }
+                val fs = filters.mapIndexed { i, n -> EditorKit.opt(this, n, i == filterIdx) { filterIdx = i; applyPreview(); buildPanel() } }
                 box.addView(chipRow(*fs.toTypedArray()))
             }
             3 -> {
                 box.addView(chipRow(
-                    Design.chip(this, if (textStr.isEmpty()) "Add text" else "Edit text", textStr.isNotEmpty()) { askText() },
-                    Design.chip(this, "Top", textPos == 0) { textPos = 0; applyPreview(); buildPanel() },
-                    Design.chip(this, "Middle", textPos == 1) { textPos = 1; applyPreview(); buildPanel() },
-                    Design.chip(this, "Bottom", textPos == 2) { textPos = 2; applyPreview(); buildPanel() },
-                    Design.chip(this, "Remove", false) { textStr = ""; applyPreview(); buildPanel() }
+                    EditorKit.opt(this, if (textStr.isEmpty()) "Add text" else "Edit text", textStr.isNotEmpty()) { askText() },
+                    EditorKit.opt(this, "Top", textPos == 0) { textPos = 0; applyPreview(); buildPanel() },
+                    EditorKit.opt(this, "Middle", textPos == 1) { textPos = 1; applyPreview(); buildPanel() },
+                    EditorKit.opt(this, "Bottom", textPos == 2) { textPos = 2; applyPreview(); buildPanel() },
+                    EditorKit.opt(this, "Remove", false) { textStr = ""; applyPreview(); buildPanel() }
                 ))
                 if (textStr.isNotEmpty()) box.addView(UiKit.text(this, "\"$textStr\"", 13f, R.color.on_surface_muted))
             }
             4 -> {
-                box.addView(chipRow(Design.chip(this, if (mute) "Sound off" else "Sound on", mute) { mute = !mute; applyPreview(); buildPanel() }))
+                box.addView(chipRow(EditorKit.opt(this, if (mute) "Sound off" else "Sound on", mute) { mute = !mute; applyPreview(); buildPanel() }))
                 box.addView(seek("Volume %", 0, 200, vol) { vol = it })
             }
             5 -> {
-                val ss = sizes.mapIndexed { i, s -> Design.chip(this, s.first, i == sizeIdx) { sizeIdx = i; buildPanel() } }
+                val ss = sizes.mapIndexed { i, s -> EditorKit.opt(this, s.first, i == sizeIdx) { sizeIdx = i; buildPanel() } }
                 box.addView(chipRow(*ss.toTypedArray()))
                 box.addView(chipRow(
-                    Design.chip(this, "Audio only", audioOnly) { audioOnly = !audioOnly; buildPanel() },
-                    Design.chip(this, "Save this frame", false) { saveFrame() }
+                    EditorKit.opt(this, "Audio only", audioOnly) { audioOnly = !audioOnly; buildPanel() },
+                    EditorKit.opt(this, "Save this frame", false) { saveFrame() }
                 ))
             }
         }
