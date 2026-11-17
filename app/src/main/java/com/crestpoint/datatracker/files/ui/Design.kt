@@ -2,6 +2,9 @@ package com.crestpoint.datatracker.files.ui
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.content.res.ColorStateList
+import android.widget.ImageView
+import androidx.annotation.DrawableRes
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
@@ -40,13 +43,6 @@ object Design {
         val out = TypedValue()
         v.context.theme.resolveAttribute(android.R.attr.selectableItemBackground, out, true)
         if (out.resourceId != 0) v.foreground = ContextCompat.getDrawable(v.context, out.resourceId)
-        v.setOnTouchListener { view, e ->
-            when (e.actionMasked) {
-                android.view.MotionEvent.ACTION_DOWN -> view.animate().scaleX(0.96f).scaleY(0.96f).setDuration(90).start()
-                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> view.animate().scaleX(1f).scaleY(1f).setDuration(140).start()
-            }
-            false
-        }
     }
 
     fun roundedOutline(v: View, radiusDp: Int) {
@@ -67,8 +63,8 @@ object Design {
         g.cornerRadius = UiKit.dp(ctx, radiusDp).toFloat()
         f.background = g
         val t = TextView(ctx)
+        t.text = emoji
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, emojiSp)
-        Icons.set(t, emoji, color)
         t.gravity = Gravity.CENTER
         f.addView(t, FrameLayout.LayoutParams(-1, -1))
         f.tag = t
@@ -79,7 +75,6 @@ object Design {
 
     fun chip(ctx: Context, label: String, filled: Boolean, onClick: (() -> Unit)?): TextView {
         val t = UiKit.text(ctx, label, 13f, if (filled) R.color.on_surface else R.color.on_surface_muted, bold = filled)
-        Icons.setLabel(t, label)
         val g = GradientDrawable()
         g.cornerRadius = UiKit.dp(ctx, 20).toFloat()
         g.setColor(if (filled) Palette.withAlpha(UiKit.color(ctx, R.color.brand_purple), 0x66) else UiKit.color(ctx, R.color.surface_elevated))
@@ -91,6 +86,42 @@ object Design {
         lp.setMargins(UiKit.dp(ctx, 4), 0, UiKit.dp(ctx, 4), 0)
         t.layoutParams = lp
         return t
+    }
+
+    /** A crisp vector icon button with a round ripple. */
+    fun icon(
+        ctx: Context, @DrawableRes res: Int, sizeDp: Int = 44,
+        tint: Int = ContextCompat.getColor(ctx, R.color.on_surface), onClick: (() -> Unit)? = null
+    ): ImageView {
+        val v = ImageView(ctx)
+        v.setImageResource(res)
+        v.imageTintList = ColorStateList.valueOf(tint)
+        v.scaleType = ImageView.ScaleType.CENTER_INSIDE
+        val pad = UiKit.dp(ctx, sizeDp / 4)
+        v.setPadding(pad, pad, pad, pad)
+        v.layoutParams = LinearLayout.LayoutParams(UiKit.dp(ctx, sizeDp), UiKit.dp(ctx, sizeDp))
+        val out = TypedValue()
+        ctx.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, out, true)
+        if (out.resourceId != 0) v.background = ContextCompat.getDrawable(ctx, out.resourceId)
+        if (onClick != null) v.setOnClickListener { onClick() }
+        return v
+    }
+
+    /** Filled round icon button (floating action button). */
+    fun circleIcon(ctx: Context, @DrawableRes res: Int, sizeDp: Int, colorRes: Int, onClick: () -> Unit): ImageView {
+        val v = ImageView(ctx)
+        v.setImageResource(res)
+        v.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(ctx, R.color.on_surface))
+        v.scaleType = ImageView.ScaleType.CENTER_INSIDE
+        val pad = UiKit.dp(ctx, sizeDp / 4)
+        v.setPadding(pad, pad, pad, pad)
+        val g = GradientDrawable()
+        g.shape = GradientDrawable.OVAL
+        g.setColor(UiKit.color(ctx, colorRes))
+        v.background = g
+        v.elevation = UiKit.dp(ctx, 8).toFloat()
+        v.setOnClickListener { onClick() }
+        return v
     }
 
     fun circleButton(ctx: Context, glyph: String, sizeDp: Int, colorRes: Int, onClick: () -> Unit): TextView {
@@ -106,7 +137,11 @@ object Design {
     }
 }
 
-class SheetAction(val emoji: String, val label: String, val danger: Boolean = false, val run: () -> Unit)
+class SheetAction(val emoji: String, val label: String, val danger: Boolean = false, val iconRes: Int = 0, val run: () -> Unit)
+
+/** A menu row with a crisp check mark when selected (no emoji). */
+fun sheetPick(selected: Boolean, label: String, run: () -> Unit): SheetAction =
+    SheetAction("", label, false, if (selected) R.drawable.ic_fx_check else 0, run)
 
 object ActionSheet {
     fun show(ctx: Context, title: String?, actions: List<SheetAction>) {
@@ -127,7 +162,15 @@ object ActionSheet {
             val row = LinearLayout(ctx)
             row.gravity = Gravity.CENTER_VERTICAL
             row.setPadding(UiKit.dp(ctx, 10), UiKit.dp(ctx, 13), UiKit.dp(ctx, 10), UiKit.dp(ctx, 13))
-            row.addView(UiKit.text(ctx, a.emoji, 20f).also { it.setPadding(0, 0, UiKit.dp(ctx, 14), 0); Icons.set(it, a.emoji, UiKit.color(ctx, if (a.danger) R.color.health_bad else R.color.on_surface)) })
+            if (a.iconRes == 0 && a.emoji.isEmpty()) {
+                row.addView(View(ctx), LinearLayout.LayoutParams(UiKit.dp(ctx, 46), 1))
+            } else if (a.iconRes != 0) {
+                val ic = Design.icon(ctx, a.iconRes, 36, UiKit.color(ctx, if (a.danger) R.color.health_bad else R.color.on_surface))
+                (ic.layoutParams as LinearLayout.LayoutParams).rightMargin = UiKit.dp(ctx, 10)
+                row.addView(ic)
+            } else {
+                row.addView(UiKit.text(ctx, a.emoji, 20f).also { it.setPadding(0, 0, UiKit.dp(ctx, 14), 0) })
+            }
             row.addView(UiKit.text(ctx, a.label, 15f, if (a.danger) R.color.health_bad else R.color.on_surface))
             Design.ripple(row)
             row.setOnClickListener { d.dismiss(); a.run() }

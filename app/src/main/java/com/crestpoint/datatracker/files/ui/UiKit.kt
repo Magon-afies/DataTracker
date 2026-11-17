@@ -31,7 +31,6 @@ object UiKit {
         t.text = s
         t.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp)
         t.setTextColor(color(ctx, colorRes))
-        if (s is String && Icons.has(s)) Icons.set(t, s)
         if (bold) t.setTypeface(t.typeface, Typeface.BOLD)
         return t
     }
@@ -44,18 +43,12 @@ object UiKit {
         }
         b.text = label
         b.isAllCaps = false
-        b.cornerRadius = dp(ctx, Tokens.R_M)
-        b.insetTop = 0
-        b.insetBottom = 0
-        b.minimumHeight = dp(ctx, 46)
-        if (!outlined) b.backgroundTintList = ColorStateList.valueOf(color(ctx, R.color.brand_purple))
         b.setOnClickListener { onClick(it) }
         return b
     }
 
     fun iconBtn(ctx: Context, glyph: String, onClick: (View) -> Unit): TextView {
         val t = text(ctx, glyph, 20f)
-        Icons.set(t, glyph)
         val p = dp(ctx, 10)
         t.setPadding(p, p, p, p)
         t.setOnClickListener { onClick(it) }
@@ -72,7 +65,7 @@ object UiKit {
     fun card(ctx: Context): LinearLayout {
         val c = LinearLayout(ctx)
         c.orientation = LinearLayout.VERTICAL
-        c.background = Tokens.cardBg(ctx)
+        c.background = rounded(ctx, R.color.surface_elevated)
         val p = dp(ctx, 14)
         c.setPadding(p, p, p, p)
         val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)

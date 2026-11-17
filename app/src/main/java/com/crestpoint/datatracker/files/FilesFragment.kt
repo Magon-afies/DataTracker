@@ -42,10 +42,10 @@ import com.crestpoint.datatracker.files.tools.StorageAnalyzerActivity
 import com.crestpoint.datatracker.files.tools.TrashActivity
 import com.crestpoint.datatracker.files.ui.ActionSheet
 import com.crestpoint.datatracker.files.ui.Design
-import com.crestpoint.datatracker.files.ui.Icons
 import com.crestpoint.datatracker.files.ui.Palette
 import com.crestpoint.datatracker.files.ui.RingView
 import com.crestpoint.datatracker.files.ui.SheetAction
+import com.crestpoint.datatracker.files.ui.sheetPick
 import com.crestpoint.datatracker.files.ui.Thumbs
 import com.crestpoint.datatracker.files.ui.UiKit
 import com.crestpoint.datatracker.files.vault.VaultActivity
@@ -79,7 +79,7 @@ class FilesFragment : Fragment() {
     private lateinit var emptyBox: LinearLayout
     private lateinit var permCard: LinearLayout
     private lateinit var spinner: ProgressBar
-    private lateinit var fab: TextView
+    private lateinit var fab: View
     private lateinit var floatBar: LinearLayout
     private lateinit var pasteBar: LinearLayout
     private lateinit var pasteLabel: TextView
@@ -116,10 +116,10 @@ class FilesFragment : Fragment() {
         titleText.maxLines = 1
         titleText.ellipsize = TextUtils.TruncateAt.END
         header.addView(titleText, UiKit.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        header.addView(UiKit.iconBtn(ctx, "🔍") { toggleSearch() })
-        header.addView(UiKit.iconBtn(ctx, "⇅") { sortMenu() })
-        header.addView(UiKit.iconBtn(ctx, "⊞") { prefs.grid = !prefs.grid; rebuildAdapter(); display() })
-        header.addView(UiKit.iconBtn(ctx, "⋮") { moreMenu() })
+        header.addView(Design.icon(ctx, R.drawable.ic_fx_search, 44) { toggleSearch() })
+        header.addView(Design.icon(ctx, R.drawable.ic_fx_sort, 44) { sortMenu() })
+        header.addView(Design.icon(ctx, R.drawable.ic_fx_grid, 44) { prefs.grid = !prefs.grid; rebuildAdapter(); display() })
+        header.addView(Design.icon(ctx, R.drawable.ic_fx_more, 44) { moreMenu() })
         col.addView(header)
 
         tabScroll = HorizontalScrollView(ctx)
@@ -194,7 +194,7 @@ class FilesFragment : Fragment() {
         frame.addView(col, FrameLayout.LayoutParams(-1, -1))
 
         // floating action button
-        fab = Design.circleButton(ctx, "＋", 58, R.color.brand_purple) { fabMenu() }
+        fab = Design.circleIcon(ctx, R.drawable.ic_fx_add, 58, R.color.brand_purple) { fabMenu() }
         val flp = FrameLayout.LayoutParams(UiKit.dp(ctx, 58), UiKit.dp(ctx, 58), Gravity.BOTTOM or Gravity.END)
         flp.setMargins(0, 0, UiKit.dp(ctx, 18), UiKit.dp(ctx, 18))
         fab.visibility = View.GONE
@@ -478,19 +478,6 @@ class FilesFragment : Fragment() {
         val ctx = requireContext()
         homeBox.removeAllViews()
 
-        // search shortcut at the top of Home
-        val searchBar = LinearLayout(ctx)
-        searchBar.gravity = Gravity.CENTER_VERTICAL
-        searchBar.background = com.crestpoint.datatracker.files.ui.Tokens.cardBg(ctx, 28)
-        searchBar.setPadding(UiKit.dp(ctx, 16), UiKit.dp(ctx, 12), UiKit.dp(ctx, 16), UiKit.dp(ctx, 12))
-        searchBar.addView(UiKit.text(ctx, "🔍", 18f))
-        searchBar.addView(UiKit.text(ctx, "  Search files and folders", 14f, R.color.on_surface_muted))
-        searchBar.setOnClickListener { toggleSearch() }
-        Design.ripple(searchBar)
-        val slp = LinearLayout.LayoutParams(-1, -2)
-        slp.setMargins(UiKit.dp(ctx, 14), UiKit.dp(ctx, 6), UiKit.dp(ctx, 14), UiKit.dp(ctx, 6))
-        homeBox.addView(searchBar, slp)
-
         // hero storage card
         val rts = roots()
         val first = rts.first()
@@ -610,38 +597,23 @@ class FilesFragment : Fragment() {
             homeBox.addView(row)
         }
 
-        section("CLEAN UP")
+        section("PHONE MANAGER")
         gridRows(listOf(
-            catTile("🧹", "Junk", 0xFFFF8A65.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.JUNK) },
-            catTile("👯", "Duplicates", 0xFF64B5F6.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.DUPLICATES) },
-            catTile("🐘", "Large", 0xFFFFB74D.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.LARGE) },
-            catTile("🕰️", "Old files", 0xFF9FA8DA.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.OLD) }
-        ), 4)
-
-        section("TOOLS")
-        gridRows(listOf(
-            catTile("📊", "Analyzer", 0xFF4DB6AC.toInt()) { startActivity(Intent(ctx, StorageAnalyzerActivity::class.java)) },
-            catTile("💬", "Chat media", 0xFF81C784.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.CHAT_MEDIA) },
-            catTile("🧩", "Apps", 0xFFBA68C8.toInt()) { startActivity(Intent(ctx, AppManagerActivity::class.java)) },
-            catTile("📵", "Data bot", 0xFF26C6DA.toInt()) { startActivity(Intent(ctx, DataBotActivity::class.java)) },
-            catTile("🔐", "Vault", 0xFF7657F6.toInt()) { startActivity(Intent(ctx, VaultActivity::class.java)) },
-            catTile("📡", "Wi-Fi", 0xFF4FC3F7.toInt()) { startActivity(Intent(ctx, WifiShareActivity::class.java)) },
-            catTile("🌐", "Remote", 0xFF4DD0E1.toInt()) { startActivity(Intent(ctx, RemoteActivity::class.java)) },
-            catTile("🎧", "Music", 0xFFF06292.toInt()) { startActivity(Intent(ctx, MusicActivity::class.java)) },
-            catTile("📱", "APKs", 0xFFAED581.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.APKS) },
-            catTile("🗑️", "Bin", 0xFF90A4AE.toInt()) { startActivity(Intent(ctx, TrashActivity::class.java)) }
-        ), 4)
-
-        // sections slide in the first time Home is shown
-        if (homeBox.tag != "shown") {
-            homeBox.tag = "shown"
-            for (i in 0 until homeBox.childCount) {
-                val v = homeBox.getChildAt(i)
-                v.alpha = 0f
-                v.translationY = UiKit.dp(ctx, 16).toFloat()
-                v.animate().alpha(1f).translationY(0f).setStartDelay(i * 35L).setDuration(260).start()
-            }
-        }
+            toolCard("🧹", "Junk cleaner", "Free up space safely", 0xFFFF8A65.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.JUNK) },
+            toolCard("👯", "Duplicates", "Find identical copies", 0xFF64B5F6.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.DUPLICATES) },
+            toolCard("🐘", "Large files", "Biggest space hogs", 0xFFFFB74D.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.LARGE) },
+            toolCard("🕰️", "Old files", "Untouched for months", 0xFF9FA8DA.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.OLD) },
+            toolCard("📊", "Analyzer", "See what's using storage", 0xFF4DB6AC.toInt()) { startActivity(Intent(ctx, StorageAnalyzerActivity::class.java)) },
+            toolCard("💬", "Chat media", "WhatsApp & Telegram", 0xFF81C784.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.CHAT_MEDIA) },
+            toolCard("🧩", "App manager", "Backup & uninstall", 0xFFBA68C8.toInt()) { startActivity(Intent(ctx, AppManagerActivity::class.java)) },
+            toolCard("📵", "Data bot", "Stop background data", 0xFF26C6DA.toInt()) { startActivity(Intent(ctx, DataBotActivity::class.java)) },
+            toolCard("🔐", "Vault", "Locked & encrypted", 0xFF7657F6.toInt()) { startActivity(Intent(ctx, VaultActivity::class.java)) },
+            toolCard("📡", "Wi-Fi share", "Use files from your PC", 0xFF4FC3F7.toInt()) { startActivity(Intent(ctx, WifiShareActivity::class.java)) },
+            toolCard("🌐", "Remote (FTP)", "Servers, NAS, hosting", 0xFF4DD0E1.toInt()) { startActivity(Intent(ctx, RemoteActivity::class.java)) },
+            toolCard("🎧", "Music player", "Plays in background", 0xFFF06292.toInt()) { startActivity(Intent(ctx, MusicActivity::class.java)) },
+            toolCard("📱", "APK files", "Installers on this phone", 0xFFAED581.toInt()) { ScanListActivity.start(ctx, ScanListActivity.Mode.APKS) },
+            toolCard("🗑️", "Recycle Bin", "Restore deleted files", 0xFF90A4AE.toInt()) { startActivity(Intent(ctx, TrashActivity::class.java)) }
+        ), 2)
     }
 
     private fun scanKind(kind: FileKind) {
@@ -714,7 +686,7 @@ class FilesFragment : Fragment() {
         val acts = ArrayList<SheetAction>()
         SortMode.values().forEach { m ->
             val label = m.name.lowercase().replaceFirstChar { it.uppercase() }
-            acts.add(SheetAction(if (prefs.sort == m) "✅" else "▫️", "Sort by $label") { prefs.sort = m; refresh() })
+            acts.add(sheetPick(prefs.sort == m, "Sort by $label") { prefs.sort = m; refresh() })
         }
         acts.add(SheetAction("↕️", if (prefs.asc) "Order: A → Z (tap to reverse)" else "Order: Z → A (tap to reverse)") { prefs.asc = !prefs.asc; refresh() })
         ActionSheet.show(ctx, "Sort", acts)
@@ -746,7 +718,7 @@ class FilesFragment : Fragment() {
     private fun moreMenu() {
         val ctx = requireContext()
         val acts = arrayListOf(
-            SheetAction(if (prefs.showHidden) "✅" else "👁️", "Show hidden files") { prefs.showHidden = !prefs.showHidden; refresh() },
+            sheetPick(prefs.showHidden, "Show hidden files") { prefs.showHidden = !prefs.showHidden; refresh() },
             SheetAction("☑️", "Select all") { shownList.forEach { selected.add(it.path) }; display() },
             SheetAction("🗑️", "Recycle Bin") { startActivity(Intent(ctx, TrashActivity::class.java)) },
             SheetAction("🔄", "Refresh") { refresh() }
@@ -767,22 +739,22 @@ class FilesFragment : Fragment() {
         floatBar.removeAllViews()
         if (sel) {
             floatBar.addView(Design.chip(ctx, "✕  ${selected.size}", true) { selected.clear(); display() })
-            fun act(emoji: String, label: String, run: () -> Unit) {
+            fun act(res: Int, label: String, run: () -> Unit) {
                 val c = LinearLayout(ctx)
                 c.orientation = LinearLayout.VERTICAL
                 c.gravity = Gravity.CENTER
                 c.setPadding(UiKit.dp(ctx, 10), UiKit.dp(ctx, 4), UiKit.dp(ctx, 10), UiKit.dp(ctx, 4))
-                c.addView(UiKit.text(ctx, emoji, 20f).also { it.gravity = Gravity.CENTER; Icons.set(it, emoji) })
+                c.addView(Design.icon(ctx, res, 32).also { (it.layoutParams as LinearLayout.LayoutParams).gravity = Gravity.CENTER_HORIZONTAL })
                 c.addView(UiKit.text(ctx, label, 10f, R.color.on_surface_muted).also { it.gravity = Gravity.CENTER })
                 c.setOnClickListener { run() }
                 Design.ripple(c)
                 floatBar.addView(c, UiKit.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             }
-            act("📋", "Copy") { setClip(false) }
-            act("✂️", "Cut") { setClip(true) }
-            act("🗑️", "Delete") { deleteSelected() }
-            act("📤", "Share") { FileOpener.share(ctx, selectedFiles()) }
-            act("⋯", "More") { selectionMenu() }
+            act(R.drawable.ic_fx_copy, "Copy") { setClip(false) }
+            act(R.drawable.ic_fx_cut, "Cut") { setClip(true) }
+            act(R.drawable.ic_fx_delete, "Delete") { deleteSelected() }
+            act(R.drawable.ic_fx_share, "Share") { FileOpener.share(ctx, selectedFiles()) }
+            act(R.drawable.ic_fx_more, "More") { selectionMenu() }
         }
         val clip = FileClipboard.files
         val show = clip.isNotEmpty() && current != null && !sel && !home
@@ -801,7 +773,6 @@ class FilesFragment : Fragment() {
             SheetAction("☑️", "Select all") { shownList.forEach { selected.add(it.path) }; display() }
         )
         if (files.any { it.isFile }) acts.add(2, SheetAction("🔗", "Open with…") { files.firstOrNull { it.isFile }?.let { FileOpener.external(ctx, it) } })
-        if (files.size == 1 && com.crestpoint.datatracker.files.edit.Editors.canEdit(files[0])) acts.add(2, SheetAction("✎", "Edit") { com.crestpoint.datatracker.files.edit.Editors.open(ctx, files[0]) })
         val others = tabs.withIndex().filter { (i, p) -> i != tabIndex && p != null && File(p).isDirectory }
         others.forEach { (i, p) ->
             val dest = File(p!!)
@@ -997,7 +968,7 @@ class FilesFragment : Fragment() {
             bg.setColor(if (sel) color else Palette.withAlpha(color, 0x33))
             bg.cornerRadius = UiKit.dp(ctx, if (grid) 20 else 15).toFloat()
             h.tile.background = bg
-            Icons.set(h.emoji, if (sel) "✓" else kind.emoji, if (sel) 0xFFFFFFFF.toInt() else color)
+            h.emoji.text = if (sel) "✓" else kind.emoji
             h.emoji.visibility = View.VISIBLE
             h.thumb.visibility = View.GONE
             h.thumb.setImageDrawable(null)

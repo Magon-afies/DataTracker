@@ -26,11 +26,9 @@ class AutoRestrictWorker(ctx: Context, params: WorkerParameters) : Worker(ctx, p
             val req = PeriodicWorkRequestBuilder<AutoRestrictWorker>(6, TimeUnit.HOURS).build()
             WorkManager.getInstance(ctx.applicationContext)
                 .enqueueUniquePeriodicWork(NAME, ExistingPeriodicWorkPolicy.UPDATE, req)
-            RestrictorWorker.schedule(ctx)
         }
         fun cancel(ctx: Context) {
             WorkManager.getInstance(ctx.applicationContext).cancelUniqueWork(NAME)
-            RestrictorWorker.cancel(ctx)
         }
     }
 }

@@ -10,7 +10,6 @@ import androidx.core.content.FileProvider
 import com.crestpoint.datatracker.files.archive.ArchiveActivity
 import com.crestpoint.datatracker.files.ui.UiKit
 import com.crestpoint.datatracker.files.viewers.ImageViewerActivity
-import com.crestpoint.datatracker.files.viewers.MediaActivity
 import com.crestpoint.datatracker.files.viewers.PdfViewerActivity
 import com.crestpoint.datatracker.files.viewers.TextEditorActivity
 import com.crestpoint.datatracker.util.FormatBytes
@@ -37,8 +36,13 @@ object FileOpener {
                 i.putExtra("index", imgs.indexOfFirst { it.path == f.path }.coerceAtLeast(0))
                 launch(ctx, i)
             }
-            FileKind.VIDEO ->
-                launch(ctx, Intent(ctx, MediaActivity::class.java).putExtra("path", f.path))
+            FileKind.VIDEO -> {
+                val vids = (siblings ?: listOf(f)).filter { FileKinds.of(it) == FileKind.VIDEO }
+                val i = Intent(ctx, com.crestpoint.datatracker.files.viewers.VideoPlayerActivity::class.java)
+                i.putStringArrayListExtra("paths", ArrayList(vids.map { it.path }))
+                i.putExtra("index", vids.indexOfFirst { it.path == f.path }.coerceAtLeast(0))
+                launch(ctx, i)
+            }
             FileKind.AUDIO -> {
                 val songs = (siblings ?: listOf(f)).filter { FileKinds.of(it) == FileKind.AUDIO }
                 val i = Intent(ctx, com.crestpoint.datatracker.files.music.MusicActivity::class.java)

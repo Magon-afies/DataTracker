@@ -48,7 +48,7 @@ class TextEditorActivity : AppCompatActivity() {
         val find = UiKit.button(this, "Find / replace", true) { findDialog() }
         bar.addView(save); bar.addView(find)
 
-        editor = EditText(this)
+        editor = LineNumberEditText(this)
         editor.typeface = Typeface.MONOSPACE
         editor.textSize = 13f
         editor.gravity = Gravity.TOP or Gravity.START
@@ -151,5 +151,44 @@ class TextEditorActivity : AppCompatActivity() {
                 UiKit.toast(ctx, "Replaced $n")
             }
             .setNegativeButton("Close", null).show()
+    }
+}
+
+/** EditText with a line-number gutter (disabled for very large files). */
+class LineNumberEditText(ctx: android.content.Context) : androidx.appcompat.widget.AppCompatEditText(ctx) {
+    private val num = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    private val bar = android.graphics.Paint()
+    private val dens = resources.displayMetrics.density
+    private val gutter = (46 * dens).toInt()
+
+    init {
+        num.color = 0xFF7C7A92.toInt()
+        num.textAlign = android.graphics.Paint.Align.RIGHT
+        num.typeface = android.graphics.Typeface.MONOSPACE
+        bar.color = 0x33000000
+        setPadding(gutter + (6 * dens).toInt(), paddingTop, paddingRight, paddingBottom)
+    }
+
+    override fun onDraw(c: android.graphics.Canvas) {
+        val l = layout
+        val t = text
+        if (l != null && t != null && t.length < 400_000) {
+            c.drawRect(scrollX.toFloat(), scrollY.toFloat(), (scrollX + gutter).toFloat(), (scrollY + height).toFloat(), bar)
+            num.textSize = textSize * 0.82f
+            val first = l.getLineForVertical(scrollY)
+            val last = l.getLineForVertical(scrollY + height)
+            var n = 1
+            val st = l.getLineStart(first)
+            for (i in 0 until st) if (t[i] == '\n') n++
+            for (i in first..last) {
+                val ls = l.getLineStart(i)
+                if (ls == 0 || t[ls - 1] == '\n') {
+                    c.drawText(n.toString(), scrollX + gutter - 8f * dens, (l.getLineBaseline(i) + compoundPaddingTop).toFloat(), num)
+                }
+                val le = l.getLineEnd(i)
+                if (le > 0 && le <= t.length && t[le - 1] == '\n') n++
+            }
+        }
+        super.onDraw(c)
     }
 }

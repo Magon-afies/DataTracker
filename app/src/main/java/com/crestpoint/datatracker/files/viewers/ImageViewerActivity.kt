@@ -1,5 +1,7 @@
 package com.crestpoint.datatracker.files.viewers
 
+import com.crestpoint.datatracker.files.ui.Design
+import com.crestpoint.datatracker.R
 import android.app.WallpaperManager
 import android.content.Context
 import android.graphics.Bitmap
@@ -151,12 +153,11 @@ class ImageViewerActivity : AppCompatActivity() {
         caption.maxLines = 1
         caption.ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
         top.addView(caption, UiKit.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        top.addView(UiKit.iconBtn(this, "⟳") { rotate() })
-        top.addView(UiKit.iconBtn(this, "ℹ️") { details() })
-        top.addView(UiKit.iconBtn(this, "🖼") { wallpaper() })
-        top.addView(UiKit.iconBtn(this, "▶") { toggleSlideshow() })
-        top.addView(UiKit.iconBtn(this, "✎") { com.crestpoint.datatracker.files.edit.Editors.open(this, File(paths[index])) })
-        top.addView(UiKit.iconBtn(this, "✕") { finish() })
+        top.addView(Design.icon(this, R.drawable.ic_fx_rotate, 44, android.graphics.Color.WHITE) { rotate() })
+        top.addView(Design.icon(this, R.drawable.ic_fx_info, 44, android.graphics.Color.WHITE) { details() })
+        top.addView(Design.icon(this, R.drawable.ic_fx_image, 44, android.graphics.Color.WHITE) { wallpaper() })
+        top.addView(Design.icon(this, R.drawable.ic_fx_slideshow, 44, android.graphics.Color.WHITE) { toggleSlideshow() })
+        top.addView(Design.icon(this, R.drawable.ic_fx_close, 44, android.graphics.Color.WHITE) { finish() })
         root.addView(top, FrameLayout.LayoutParams(-1, -2, Gravity.TOP))
         setContentView(root)
         loadCurrent()
