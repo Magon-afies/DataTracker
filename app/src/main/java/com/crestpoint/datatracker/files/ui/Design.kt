@@ -176,8 +176,11 @@ object ActionSheet {
             row.setOnClickListener { d.dismiss(); a.run() }
             col.addView(row)
         }
-        d.setContentView(col)
+        val scroll = androidx.core.widget.NestedScrollView(ctx)
+        scroll.addView(col)
+        d.setContentView(scroll)
         d.show()
+        d.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
     }
 }
 

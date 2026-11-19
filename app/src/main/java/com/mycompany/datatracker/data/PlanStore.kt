@@ -39,10 +39,41 @@ class PlanStore(context: Context) {
         return db.writableDatabase.insert("data_plans", null, values)
     }
 
+    /** Edit a plan in place so editing never creates a second plan. */
+    fun update(id: Long, sizeBytes: Long, carrier: String, startMs: Long, expiryMs: Long, priceNaira: Double) {
+        val old = activePlanById(id)
+        val values = ContentValues().apply {
+            put("size_bytes", sizeBytes)
+            put("carrier", carrier)
+            put("start_ms", startMs)
+            put("expiry_ms", expiryMs)
+            put("price_naira", priceNaira.coerceAtLeast(0.0))
+            if (old == null || old.sizeBytes != sizeBytes || old.expiryMs != expiryMs) put("fired_mask", 0)
+        }
+        db.writableDatabase.update("data_plans", values, "id = ?", arrayOf(id.toString()))
+        if (old != null && old.startMs != startMs) db.writableDatabase.delete("plan_snapshots", "plan_id = ?", arrayOf(id.toString()))
+    }
+
+    /** Remove a plan and its usage snapshots (the countdown starts fresh with the next plan). */
+    fun delete(id: Long) {
+        db.writableDatabase.delete("plan_snapshots", "plan_id = ?", arrayOf(id.toString()))
+        db.writableDatabase.delete("data_plans", "id = ?", arrayOf(id.toString()))
+    }
+
+    /** Every plan running right now (normally just one). */
+    fun allActive(now: Long = System.currentTimeMillis()): List<DataPlan> {
+        val out = ArrayList<DataPlan>()
+        db.readableDatabase.query(
+            "data_plans", null, "start_ms <= ? AND expiry_ms >= ?",
+            arrayOf(now.toString(), now.toString()), null, null, "start_ms DESC, id DESC"
+        ).use { c -> while (c.moveToNext()) out.add(c.toPlan()) }
+        return out
+    }
+
     fun active(now: Long = System.currentTimeMillis()): DataPlan? {
         db.readableDatabase.query(
             "data_plans", null, "start_ms <= ? AND expiry_ms >= ?",
-            arrayOf(now.toString(), now.toString()), null, null, "start_ms DESC", "1"
+            arrayOf(now.toString(), now.toString()), null, null, "start_ms DESC, id DESC", "1"
         ).use { c ->
             return if (c.moveToFirst()) c.toPlan() else null
         }

@@ -19,7 +19,7 @@ import com.crestpoint.datatracker.usage.UsageRepository
 import com.crestpoint.datatracker.util.FormatBytes
 import java.util.Locale
 
-data class DataCandidate(val pkg: String, val label: String, val mobileBytes: Long, val bgPercent: Int)
+data class DataCandidate(val pkg: String, val label: String, val mobileBytes: Long, val bgPercent: Int, val bgBytes: Long = 0L)
 
 class DataBotPrefs(ctx: Context) {
     private val sp = ctx.applicationContext.getSharedPreferences("databot_prefs", Context.MODE_PRIVATE)
@@ -134,7 +134,7 @@ object DataBot {
             val bp = a.backgroundPercent
             if (bp in 0..59) continue
             if (bp < 0 && a.mobileTotal < min * 2) continue
-            out.add(DataCandidate(pkg, a.label, a.mobileTotal, bp))
+            out.add(DataCandidate(pkg, a.label, a.mobileTotal, bp, a.backgroundBytes))
         }
         return out.sortedByDescending { it.mobileBytes }
     }

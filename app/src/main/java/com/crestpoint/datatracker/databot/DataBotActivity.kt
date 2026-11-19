@@ -177,7 +177,7 @@ class DataBotActivity : AppCompatActivity() {
             cb.isChecked = checked
             cb.setTextColor(UiKit.color(this, R.color.on_surface))
             cb.text = a.label + if (a.mobileBytes > 0)
-                "\n${humanMb(a.mobileBytes)} mobile" + (if (a.bgPercent >= 0) " · ${a.bgPercent}% in background" else "") else ""
+                "\n${humanMb(a.mobileBytes)} mobile" + (if (a.bgBytes > 0) " · ${humanMb(a.bgBytes)} in background (${a.bgPercent}%)" else if (a.bgPercent >= 0) " · ${a.bgPercent}% in background" else "") else ""
             list.addView(cb)
             boxes[a.pkg] = cb
         }

@@ -110,10 +110,12 @@ class UsageRepository(private val context: Context) {
                     when (bucket.state) {
                         NetworkStats.Bucket.STATE_FOREGROUND -> {
                             entry.foregroundBytes += bytes
+                            if (type == ConnectivityManager.TYPE_MOBILE) entry.mobileForegroundBytes += bytes
                             entry.splitKnown = true
                         }
                         NetworkStats.Bucket.STATE_DEFAULT -> {
                             entry.backgroundBytes += bytes
+                            if (type == ConnectivityManager.TYPE_MOBILE) entry.mobileBackgroundBytes += bytes
                             entry.splitKnown = true
                         }
                         else -> {}

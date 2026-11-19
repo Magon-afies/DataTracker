@@ -67,7 +67,8 @@ class AppsFragment : Fragment(R.layout.fragment_apps) {
         val summary = TextView(ctx).apply {
             val split = if (app.backgroundPercent >= 0) {
                 "Foreground ${FormatBytes.human(app.foregroundBytes)} (${app.foregroundPercent}%) · " +
-                    "Background ${FormatBytes.human(app.backgroundBytes)} (${app.backgroundPercent}%)"
+                    "Background ${FormatBytes.human(app.backgroundBytes)} (${app.backgroundPercent}%)\n" +
+                    "Background on mobile data: ${FormatBytes.human(app.mobileBackgroundBytes)} · on Wi-Fi: ${FormatBytes.human((app.backgroundBytes - app.mobileBackgroundBytes).coerceAtLeast(0L))}"
             } else {
                 "Foreground/background split is not available on this phone"
             }

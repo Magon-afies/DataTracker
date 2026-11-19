@@ -30,6 +30,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
+import kotlin.math.roundToInt
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.AudioAttributes
@@ -116,9 +117,13 @@ class VideoPlayerActivity : AppCompatActivity() {
     private var firstSize = true
     private var textOn = true
     private var enhancer: LoudnessEnhancer? = null
-    private var boostLevel = 0
+    private var boostPct = 100
+    private var startLevel = 0.5f
+    private var loopMode = 0 // 0 off, 1 repeat this video, 2 repeat the whole folder
+    private var abA = -1L
+    private var abB = -1L
     private var sleepRunnable: Runnable? = null
-    private val speeds = floatArrayOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)
+    private val speeds = floatArrayOf(0.25f, 0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f, 3f)
     private var speed = 1f
     private val handler = Handler(Looper.getMainLooper())
     private val hideControls = Runnable { if (player.isPlaying && !dragging) setControls(false) }
@@ -126,6 +131,7 @@ class VideoPlayerActivity : AppCompatActivity() {
     private var lastSave = 0L
     private val ticker = object : Runnable {
         override fun run() {
+            if (abA >= 0 && abB > abA && player.currentPosition >= abB) player.seekTo(abA)
             if (!dragging) {
                 val d = player.duration
                 if (d > 0) { seek.max = d.toInt(); durT.text = fmt(d) }
@@ -135,7 +141,7 @@ class VideoPlayerActivity : AppCompatActivity() {
             }
             val now = System.currentTimeMillis()
             if (now - lastSave > 5000) { lastSave = now; savePos() }
-            handler.postDelayed(this, 400)
+            handler.postDelayed(this, 200)
         }
     }
 
@@ -180,7 +186,7 @@ class VideoPlayerActivity : AppCompatActivity() {
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_ENDED) {
                     prefs.setMediaPos(paths[index], 0)
-                    if (index < paths.size - 1) go(1) else setControls(true)
+                    if (index < paths.size - 1 || loopMode == 2) go(1) else setControls(true)
                 }
             }
             override fun onPlayerError(error: PlaybackException) {
@@ -361,10 +367,9 @@ class VideoPlayerActivity : AppCompatActivity() {
                         hud("Brightness  ${(v * 100).toInt()}%")
                     }
                     G.VOL -> {
-                        val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-                        val v = (startVol + (e1.y - e2.y) / root.height * max * 1.3f).toInt().coerceIn(0, max)
-                        audio.setStreamVolume(AudioManager.STREAM_MUSIC, v, 0)
-                        hud("Volume  ${v * 100 / max}%")
+                        val lvl = (startLevel + (e1.y - e2.y) / root.height * 1.6f).coerceIn(0f, 2f)
+                        applyLevel(lvl)
+                        hud("Volume  ${(lvl * 100).toInt()}%")
                     }
                     else -> {}
                 }
@@ -380,6 +385,7 @@ class VideoPlayerActivity : AppCompatActivity() {
                 startPos = player.currentPosition
                 pendingSeek = startPos
                 startVol = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
+                startLevel = currentLevel()
                 val b = window.attributes.screenBrightness
                 startBright = if (b >= 0f) b else 0.5f
             }
@@ -513,15 +519,20 @@ class VideoPlayerActivity : AppCompatActivity() {
 
     private fun moreSheet() {
         val f = File(paths[index])
-        val boostLabel = if (boostLevel == 0) "Volume boost: off" else "Volume boost: +${boostLevel * 3} dB"
+        val loopLabel = listOf("Repeat: off", "Repeat: this video", "Repeat: whole folder")[loopMode]
+        val abLabel = if (abA < 0) "A–B repeat" else if (abB < 0) "A–B repeat (A set)" else "A–B repeat (on)"
         ActionSheet.show(this, f.name, listOf(
-            SheetAction("", "Video info", iconRes = R.drawable.ic_fx_info) { info(f) },
+            SheetAction("", "Volume (up to 200%)", iconRes = R.drawable.ic_fx_volume) { boostSheet() },
+            SheetAction("", loopLabel, iconRes = R.drawable.ic_fx_repeat) { loopMode = (loopMode + 1) % 3; player.repeatMode = if (loopMode == 1) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF; hud(loopLabel.replace("Repeat: ", "Repeat ").let { listOf("Repeat off", "Repeat this video", "Repeat whole folder")[loopMode] }) },
+            SheetAction("", abLabel, iconRes = R.drawable.ic_fx_slideshow) { abSheet() },
+            SheetAction("", "Playlist (${paths.size})", iconRes = R.drawable.ic_fx_queue) { queueSheet() },
+            SheetAction("", "Subtitle size", iconRes = R.drawable.ic_fx_subtitles) { subSizeSheet() },
             SheetAction("", "Save screenshot", iconRes = R.drawable.ic_fx_image) { screenshot(f) },
             SheetAction("", "Trim / cut video", iconRes = R.drawable.ic_fx_cut) { editor(f, MediaEditor.Mode.TRIM) },
             SheetAction("", "Extract audio (M4A)", iconRes = R.drawable.ic_fx_audiotrack) { editor(f, MediaEditor.Mode.EXTRACT_AUDIO) },
             SheetAction("", "Save a muted copy", iconRes = R.drawable.ic_fx_volume_off) { editor(f, MediaEditor.Mode.MUTE) },
-            SheetAction("", boostLabel, iconRes = R.drawable.ic_fx_volume) { cycleBoost() },
             SheetAction("", "Sleep timer", iconRes = R.drawable.ic_fx_timer) { sleepSheet() },
+            SheetAction("", "Video info", iconRes = R.drawable.ic_fx_info) { info(f) },
             SheetAction("", "Share", iconRes = R.drawable.ic_fx_share) { FileOpener.share(this, listOf(f)) },
             SheetAction("", "Open with another app", iconRes = R.drawable.ic_fx_file) { FileOpener.external(this, f); finish() }
         ))
@@ -532,14 +543,65 @@ class VideoPlayerActivity : AppCompatActivity() {
         MediaEditor.show(this, f, player.duration, player.currentPosition, mode)
     }
 
-    private fun cycleBoost() {
-        boostLevel = (boostLevel + 1) % 4
+    private fun currentLevel(): Float {
+        val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+        return if (boostPct > 100) 1f + (boostPct - 100) / 100f else audio.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat() / max
+    }
+
+    /** 0..1 = phone volume, 1..2 = phone volume at max plus up to +6 dB boost (that is 200%). */
+    private fun applyLevel(lvl: Float) {
+        val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+        if (lvl <= 1f) {
+            audio.setStreamVolume(AudioManager.STREAM_MUSIC, (lvl * max).roundToInt(), 0)
+            setBoost(100)
+        } else {
+            audio.setStreamVolume(AudioManager.STREAM_MUSIC, max, 0)
+            setBoost((lvl * 100).toInt())
+        }
+    }
+
+    private fun setBoost(pct: Int) {
+        val v = pct.coerceIn(100, 200)
+        if (v == boostPct) return
+        boostPct = v
         try {
             val e = enhancer ?: LoudnessEnhancer(player.audioSessionId).also { enhancer = it }
-            e.setTargetGain(boostLevel * 300)
-            e.enabled = boostLevel > 0
-            hud(if (boostLevel == 0) "Volume boost off" else "Volume boost +${boostLevel * 3} dB")
-        } catch (e: Exception) { UiKit.toast(this, "Volume boost isn't available on this phone") }
+            e.setTargetGain((boostPct - 100) * 6)
+            e.enabled = boostPct > 100
+        } catch (_: Exception) { }
+    }
+
+    private fun boostSheet() {
+        ActionSheet.show(this, "Volume", listOf(100, 125, 150, 175, 200).map { pct ->
+            sheetPick(pct == boostPct, if (pct == 100) "100% (normal)" else "$pct%") {
+                val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                if (pct > 100) audio.setStreamVolume(AudioManager.STREAM_MUSIC, max, 0)
+                setBoost(pct); hud("Volume $pct%")
+            }
+        })
+    }
+
+    private fun abSheet() {
+        ActionSheet.show(this, "A–B repeat", listOf(
+            SheetAction("", "Set A here (${fmt(player.currentPosition)})", iconRes = R.drawable.ic_fx_check) { abA = player.currentPosition; abB = -1L; hud("A set ${fmt(abA)}") },
+            SheetAction("", "Set B here and loop", iconRes = R.drawable.ic_fx_check) {
+                if (abA < 0 || player.currentPosition <= abA + 500) UiKit.toast(this, "Set A first, then move forward and set B")
+                else { abB = player.currentPosition; player.seekTo(abA); hud("Looping ${fmt(abA)} → ${fmt(abB)}") }
+            },
+            SheetAction("", "Clear loop", iconRes = R.drawable.ic_fx_close) { abA = -1L; abB = -1L; hud("Loop cleared") }
+        ))
+    }
+
+    private fun queueSheet() {
+        ActionSheet.show(this, "Playlist · ${paths.size} videos", paths.mapIndexed { i, p ->
+            sheetPick(i == index, File(p).name) { if (i != index) { savePos(); load(i) } }
+        })
+    }
+
+    private fun subSizeSheet() {
+        ActionSheet.show(this, "Subtitle size", listOf("Small" to 14f, "Medium" to 17f, "Large" to 22f, "Huge" to 28f).map { (n, sz) ->
+            sheetPick(subText.textSize / resources.displayMetrics.scaledDensity == sz, n) { subText.textSize = sz }
+        })
     }
 
     private fun sleepSheet() {

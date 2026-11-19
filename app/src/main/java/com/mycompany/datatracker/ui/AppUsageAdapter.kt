@@ -46,7 +46,8 @@ class AppUsageAdapter(
             "Wi-Fi ${FormatBytes.human(app.wifiTotal)}"
         holder.detail2.text = buildString {
             if (app.backgroundPercent >= 0) {
-                append("Foreground ${app.foregroundPercent}% · Background ${app.backgroundPercent}%")
+                append("Foreground ${FormatBytes.human(app.foregroundBytes)} · Background ${FormatBytes.human(app.backgroundBytes)} (${app.backgroundPercent}%)")
+                if (app.mobileBackgroundBytes > 0L) append(" · ${FormatBytes.human(app.mobileBackgroundBytes)} of it on mobile data")
             } else {
                 append("Foreground/background split not available")
             }

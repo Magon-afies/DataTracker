@@ -59,7 +59,11 @@ class MusicService : Service() {
             val p = player
             if (p == null) { if (queue.isNotEmpty()) play(ctx, queue, startIndex); return }
             if (p.playWhenReady && p.playbackState != Player.STATE_ENDED) p.pause()
-            else { if (p.playbackState == Player.STATE_ENDED) p.seekTo(0, 0L); p.play() }
+            else {
+                if (p.playbackState == Player.STATE_ENDED) p.seekTo(0, 0L)
+                else if (p.playbackState == Player.STATE_IDLE) p.prepare()
+                p.play()
+            }
         }
 
         fun next() { player?.let { if (it.hasNextMediaItem()) it.seekToNextMediaItem() else it.seekTo(0, 0L) } }

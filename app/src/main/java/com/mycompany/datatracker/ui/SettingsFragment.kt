@@ -110,6 +110,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
             }
         }
         updateNotifButton()
+        com.crestpoint.datatracker.plan.PlanFormHelper.attach(this, view)
     }
 
     private fun updateNotifButton() {

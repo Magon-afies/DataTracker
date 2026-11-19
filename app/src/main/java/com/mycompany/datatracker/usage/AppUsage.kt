@@ -13,6 +13,8 @@ class AppUsage(
     var wifiTx = 0L
     var foregroundBytes = 0L
     var backgroundBytes = 0L
+    var mobileForegroundBytes = 0L
+    var mobileBackgroundBytes = 0L
     var splitKnown = false
     val hourBytes = LongArray(24)
 

@@ -2,6 +2,7 @@
 # FeaturePack updater
 #   fp                 apply the newest files-suite*.zip from Downloads, verify, then build
 #   fp --doctor        check your setup and explain what is wrong (nothing is changed)
+#   fp --undo          undo the last FeaturePack (if the last build broke something)
 #   fp --no-publish    apply + verify but don't build
 #   fp --dir <folder>  apply from an unzipped folder
 # Everything printed is also saved to ~/fp-last.log
@@ -10,10 +11,11 @@ DL="${FP_DOWNLOADS:-$HOME/storage/downloads}"
 LOG="$HOME/fp-last.log"
 
 main() {
-  DOCTOR=0; PUBLISH=1; ZIP=""; DIR=""
+  DOCTOR=0; PUBLISH=1; ZIP=""; DIR=""; UNDO=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --doctor) DOCTOR=1;;
+      --undo) UNDO=1;;
       --no-publish) PUBLISH=0;;
       --force) ;;
       --dir) DIR="$2"; shift;;
@@ -25,6 +27,15 @@ main() {
   echo "== FeaturePack =="
   [ -f "$PROJ/app/build.gradle.kts" ] || { echo "[X] Project not found at $PROJ"; echo "    Find it with:  ls ~   then run:  FP_PROJECT=~/yourfolder fp"; return 1; }
   echo "[ok] Project: $PROJ   (installed pack version: $(cat "$PROJ/.featurepack-version" 2>/dev/null || echo none))"
+  if [ "$UNDO" = 1 ]; then
+    cd "$PROJ" || return 1
+    MSG="$(git log -1 --pretty=%s)"
+    case "$MSG" in
+      FeaturePack*) echo "Undoing: $MSG"; git revert --no-edit HEAD && bash publish.sh "Undo $MSG";;
+      *) echo "The last saved change is not a FeaturePack ($MSG), so nothing was undone."; return 1;;
+    esac
+    return $?
+  fi
   command -v python3 >/dev/null || { echo "[..] Installing python"; pkg install -y python >/dev/null 2>&1; }
   command -v unzip >/dev/null || pkg install -y unzip >/dev/null 2>&1
   command -v python3 >/dev/null && echo "[ok] python3 present" || { echo "[X] python3 missing: run  pkg install python"; return 1; }
