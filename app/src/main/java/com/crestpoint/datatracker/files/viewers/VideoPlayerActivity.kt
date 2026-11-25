@@ -249,6 +249,7 @@ class VideoPlayerActivity : AppCompatActivity() {
         titleT.setTextColor(Color.WHITE); titleT.textSize = 16f; titleT.maxLines = 1
         titleT.ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
         top.addView(titleT, UiKit.lp(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        top.addView(white(R.drawable.ic_fx_edit, 44) { openEditor() })
         top.addView(white(R.drawable.ic_fx_pip, 44) { enterPip() })
         top.addView(white(R.drawable.ic_fx_more, 44) { moreSheet() })
         controls.addView(top, FrameLayout.LayoutParams(-1, -2, Gravity.TOP))
@@ -522,6 +523,7 @@ class VideoPlayerActivity : AppCompatActivity() {
         val loopLabel = listOf("Repeat: off", "Repeat: this video", "Repeat: whole folder")[loopMode]
         val abLabel = if (abA < 0) "A–B repeat" else if (abB < 0) "A–B repeat (A set)" else "A–B repeat (on)"
         ActionSheet.show(this, f.name, listOf(
+            SheetAction("", "Edit video — all tools", iconRes = R.drawable.ic_fx_edit) { openEditor() },
             SheetAction("", "Volume (up to 200%)", iconRes = R.drawable.ic_fx_volume) { boostSheet() },
             SheetAction("", loopLabel, iconRes = R.drawable.ic_fx_repeat) { loopMode = (loopMode + 1) % 3; player.repeatMode = if (loopMode == 1) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF; hud(loopLabel.replace("Repeat: ", "Repeat ").let { listOf("Repeat off", "Repeat this video", "Repeat whole folder")[loopMode] }) },
             SheetAction("", abLabel, iconRes = R.drawable.ic_fx_slideshow) { abSheet() },
@@ -534,8 +536,14 @@ class VideoPlayerActivity : AppCompatActivity() {
             SheetAction("", "Sleep timer", iconRes = R.drawable.ic_fx_timer) { sleepSheet() },
             SheetAction("", "Video info", iconRes = R.drawable.ic_fx_info) { info(f) },
             SheetAction("", "Share", iconRes = R.drawable.ic_fx_share) { FileOpener.share(this, listOf(f)) },
+            SheetAction("", "Classic player (simple)", iconRes = R.drawable.ic_fx_play) { savePos(); player.pause(); ClassicPlayerActivity.start(this, f) },
             SheetAction("", "Open with another app", iconRes = R.drawable.ic_fx_file) { FileOpener.external(this, f); finish() }
         ))
+    }
+
+    private fun openEditor() {
+        player.pause(); savePos()
+        VideoEditorActivity.start(this, File(paths[index]), player.currentPosition)
     }
 
     private fun editor(f: File, mode: MediaEditor.Mode) {

@@ -772,6 +772,7 @@ class FilesFragment : Fragment() {
             SheetAction("🔐", "Move to Vault") { VaultActivity.importFiles(ctx, files) },
             SheetAction("☑️", "Select all") { shownList.forEach { selected.add(it.path) }; display() }
         )
+        if (files.size == 1 && FileKinds.of(files[0]) == FileKind.VIDEO) acts.add(0, SheetAction("", "Edit video", iconRes = R.drawable.ic_fx_edit) { com.crestpoint.datatracker.files.viewers.VideoEditorActivity.start(ctx, files[0]) })
         if (files.any { it.isFile }) acts.add(2, SheetAction("🔗", "Open with…") { files.firstOrNull { it.isFile }?.let { FileOpener.external(ctx, it) } })
         val others = tabs.withIndex().filter { (i, p) -> i != tabIndex && p != null && File(p).isDirectory }
         others.forEach { (i, p) ->

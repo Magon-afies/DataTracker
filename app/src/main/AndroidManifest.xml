@@ -171,6 +171,8 @@
         <activity android:name=".files.edit.VideoEditorActivity" android:exported="false" android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden" />
         <activity android:name=".files.edit.SnapEditorActivity" android:exported="false" />
             <activity android:name=".files.viewers.VideoPlayerActivity" android:exported="false" android:supportsPictureInPicture="true" android:resizeableActivity="true" android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|uiMode" android:launchMode="singleTask" />
+            <activity android:name=".files.viewers.VideoEditorActivity" android:exported="false" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".files.viewers.ClassicPlayerActivity" android:exported="false" android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden" />
     </application>
 
 </manifest>

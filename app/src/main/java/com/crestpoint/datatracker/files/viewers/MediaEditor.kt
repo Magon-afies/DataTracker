@@ -12,6 +12,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
+import androidx.media3.transformer.EditedMediaItemSequence
 import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.ProgressHolder
@@ -81,7 +82,6 @@ object MediaEditor {
         val dir = File(FilePaths.internalRoot(), "Download/DataTracker/Edits")
         dir.mkdirs()
         val out = FileOps.uniqueFile(dir, "${file.nameWithoutExtension}_${mode.suffix}.$ext")
-
         val clipBuilder = MediaItem.ClippingConfiguration.Builder()
         if (startMs > 0) clipBuilder.setStartPositionMs(startMs)
         if (endMs < durationMs - 300) clipBuilder.setEndPositionMs(endMs)
@@ -90,7 +90,12 @@ object MediaEditor {
             .setRemoveVideo(mode == Mode.EXTRACT_AUDIO)
             .setRemoveAudio(mode == Mode.MUTE)
             .build()
+        run(act, Composition.Builder(EditedMediaItemSequence(listOf(edited))).build(), out)
+    }
 
+    /** Runs any composition with a progress dialog; used by the quick tools and the full editor. */
+    fun run(act: AppCompatActivity, composition: Composition, out: File, hint: String = "") {
+        out.parentFile?.mkdirs()
         val pb = ProgressBar(act, null, android.R.attr.progressBarStyleHorizontal)
         pb.max = 100
         val label = UiKit.text(act, "Exporting… 0%", 14f)
@@ -99,11 +104,13 @@ object MediaEditor {
         val p = UiKit.dp(act, 22)
         col.setPadding(p, p, p, p)
         col.addView(label); col.addView(pb, LinearLayout.LayoutParams(-1, -2))
+        col.addView(UiKit.text(act, "Keep this screen open. Everything is processed on your phone.", 11f, R.color.on_surface_muted)
+            .also { it.setPadding(0, UiKit.dp(act, 10), 0, 0) })
 
         val handler = Handler(Looper.getMainLooper())
         lateinit var transformer: Transformer
         var finished = false
-        val dialog = MaterialAlertDialogBuilder(act).setTitle("Please wait").setView(col).setCancelable(false)
+        val dialog = MaterialAlertDialogBuilder(act).setTitle("Exporting").setView(col).setCancelable(false)
             .setNegativeButton("Cancel") { _, _ -> finished = true; try { transformer.cancel() } catch (_: Exception) { }; out.delete() }
             .create()
 
@@ -112,16 +119,20 @@ object MediaEditor {
                 finished = true; dialog.dismiss()
                 MaterialAlertDialogBuilder(act).setTitle("Done ✓").setMessage("Saved:\n${out.absolutePath}")
                     .setPositiveButton("Open") { _, _ -> FileOpener.open(act, out) }
+                    .setNeutralButton("Share") { _, _ -> FileOpener.share(act, listOf(out)) }
                     .setNegativeButton("Close", null).show()
             }
             override fun onError(composition: Composition, exportResult: ExportResult, exportException: ExportException) {
                 finished = true; dialog.dismiss(); out.delete()
-                UiKit.toast(act, "Export failed: ${exportException.errorCodeName}")
+                MaterialAlertDialogBuilder(act).setTitle("Export failed")
+                    .setMessage("${exportException.errorCodeName}\n${exportException.message ?: ""}\n\n$hint" +
+                        "Tip: try Quality 720p, remove the text or filter, or set volume to 100%.")
+                    .setPositiveButton("OK", null).show()
             }
         }).build()
 
         dialog.show()
-        try { transformer.start(edited, out.absolutePath) } catch (e: Exception) {
+        try { transformer.start(composition, out.absolutePath) } catch (e: Exception) {
             finished = true; dialog.dismiss(); UiKit.toast(act, "Could not start export: ${e.message}"); return
         }
         val holder = ProgressHolder()
